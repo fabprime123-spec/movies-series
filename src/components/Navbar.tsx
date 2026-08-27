@@ -56,9 +56,6 @@ export const Navbar: React.FC = () => {
               <span className="font-['Outfit',sans-serif] text-lg font-extrabold tracking-tight text-white group-hover:text-orange-400 transition-colors">
                 Movieace
               </span>
-              <span className="text-[9px] font-bold tracking-[0.2em] text-white/50 uppercase">
-                A Cinema Periodical
-              </span>
             </div>
           </Link>
 

@@ -190,26 +190,167 @@ export const DetailsPage: React.FC = () => {
   return (
     <div className="w-full min-h-screen text-white pb-24 selection:bg-orange-500 selection:text-white">
       
-      {/* Hero Section with Backdrop and Poster on Left */}
-      <div className="relative w-full min-h-[580px] lg:min-h-[640px] flex flex-col justify-end overflow-hidden border-b border-white/10">
+      {/* ========================================================================= */}
+      {/* 1. MOBILE HERO VIEW (Directly matching user mobile screenshot layout)    */}
+      {/* ========================================================================= */}
+      <div className="block md:hidden w-full">
+        {/* Tall Backdrop Banner */}
+        <div className="relative w-full h-[360px] sm:h-[400px] overflow-hidden">
+          <img
+            src={item.backdropUrl || item.posterUrl}
+            alt={item.title}
+            className="w-full h-full object-cover object-center filter brightness-[0.95] contrast-[1.05]"
+          />
+          {/* Smooth bottom fade to page background */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/40 to-black/30" />
+          
+          {/* Circular Mobile Navigation Controls */}
+          <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white border border-white/20 active:scale-95 transition-all shadow-lg"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white border border-white/20 active:scale-95 transition-all shadow-lg"
+              aria-label="Share"
+            >
+              {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Poster Overlapping Bottom of Backdrop */}
+        <div className="px-5 -mt-24 relative z-20 flex items-end">
+          <div className="w-28 sm:w-32 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-black border border-white/20 bg-black/80 shrink-0 relative">
+            <img
+              src={item.posterUrl}
+              alt={item.title}
+              className="w-full h-full object-cover object-center"
+            />
+            {item.ageRating && (
+              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-bold text-orange-400 border border-orange-500/30">
+                {item.ageRating}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Info & Action Controls */}
+        <div className="px-5 pt-3.5 pb-6 space-y-3">
+          {/* Title */}
+          <h1 className="font-['Outfit',sans-serif] text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+            {item.title}
+          </h1>
+
+          {/* Tagline */}
+          {item.tagline && (
+            <p className="text-xs italic text-white/60">
+              "{item.tagline}"
+            </p>
+          )}
+
+          {/* Clean Dot-Separated Metadata */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/70">
+            <span className="font-medium text-white/90">{item.releaseYear}</span>
+            <span>•</span>
+            <span>
+              {item.runtimeMinutes
+                ? `${item.runtimeMinutes} min`
+                : item.totalSeasons
+                ? `${item.totalSeasons} Seasons`
+                : 'Feature'}
+            </span>
+            <span>•</span>
+            <span>{item.status}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1 text-amber-400 font-bold">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              {item.ratings.imdb.toFixed(1)}
+            </span>
+          </div>
+
+          {/* Genre Pills */}
+          <div className="flex flex-wrap gap-2 pt-0.5">
+            {item.genres.map((genre) => (
+              <span
+                key={genre}
+                className="px-3.5 py-1 rounded-full bg-white/10 text-xs font-medium text-white/90 border border-white/10"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+
+          {/* Mobile Dual Action Buttons (Side-by-side White / Accent Pills) */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <button
+              onClick={() => toggleFavorite(item)}
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-bold text-xs tracking-wide shadow-lg transition-all active:scale-95 ${
+                favorite
+                  ? 'bg-rose-500 text-white border border-rose-400'
+                  : 'bg-white text-black hover:bg-white/90'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${favorite ? 'fill-white text-white' : 'fill-black text-black'}`} />
+              <span>{favorite ? 'Favorited' : 'Favorite'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (inWatchlist) removeFromWatchlist(item.id);
+                else addToWatchlist(item, 'plan_to_watch');
+              }}
+              className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-bold text-xs tracking-wide shadow-lg transition-all active:scale-95 ${
+                inWatchlist
+                  ? 'bg-orange-500 text-white border border-orange-400'
+                  : 'bg-white text-black hover:bg-white/90'
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 ${inWatchlist ? 'fill-white text-white' : 'fill-black text-black'}`} />
+              <span>{inWatchlist ? 'In Watchlist' : 'Watchlist'}</span>
+            </button>
+          </div>
+
+          {/* Play Trailer Button if trailer exists */}
+          {item.trailerYoutubeId && (
+            <button
+              onClick={handleTrailerClick}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 text-white font-bold text-xs shadow-lg shadow-orange-500/25 active:scale-95 transition-all mt-1"
+            >
+              <Play className="w-4 h-4 fill-white" />
+              <span>Play Official Trailer</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. LAPTOP & DESKTOP HERO VIEW (Responsive backdrop, refined poster size)   */}
+      {/* ========================================================================= */}
+      <div className="hidden md:flex relative w-full min-h-[460px] lg:min-h-[500px] xl:min-h-[540px] max-h-[65vh] flex-col justify-end overflow-hidden border-b border-white/10">
         
-        {/* Cinematic Backdrop Image */}
+        {/* Cinematic Backdrop Image with High Brightness and Crisp Colors */}
         <div className="absolute inset-0 z-0">
           <img
             src={item.backdropUrl || item.posterUrl}
             alt={item.title}
-            className="h-full w-full object-cover object-center filter brightness-[0.75] contrast-[1.05]"
+            className="h-full w-full object-cover object-center filter brightness-[0.92] contrast-[1.03]"
           />
-          {/* Subtle cinematic gradient vignettes */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/70 to-black/40" />
-          <div className="absolute inset-0 bg-radial-gradient from-transparent via-[#0c0d12]/50 to-[#0c0d12]" />
+          {/* Refined gradient overlays that maintain art visibility while ensuring high text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/55 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d12]/90 via-[#0c0d12]/40 to-transparent" />
         </div>
 
         {/* Top Back Navigation Bar */}
-        <div className="relative z-20 w-full px-4 sm:px-8 lg:px-12 pt-6 mb-auto flex items-center justify-between">
+        <div className="relative z-20 w-full px-6 sm:px-8 lg:px-12 pt-6 mb-auto flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-xl bg-black/60 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md border border-white/15 hover:bg-orange-500/20 hover:border-orange-500/40 hover:text-orange-300 transition-all"
+            className="inline-flex items-center gap-2 rounded-xl bg-black/60 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md border border-white/15 hover:bg-orange-500/20 hover:border-orange-500/40 hover:text-orange-300 transition-all shadow-md"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to Issue</span>
@@ -218,7 +359,7 @@ export const DetailsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleShare}
-              className="flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-md border border-white/15 hover:bg-white/10 transition-all"
+              className="flex items-center gap-1.5 rounded-xl bg-black/60 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur-md border border-white/15 hover:bg-white/10 transition-all shadow-md"
               title="Share Title"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -227,21 +368,23 @@ export const DetailsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Hero Foreground Content: POSTER ON LEFT, DETAILS ON RIGHT */}
-        <div className="relative z-10 w-full px-4 sm:px-8 lg:px-12 py-8 pb-10 max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-end">
+        {/* Hero Foreground Content: PROPORTIONAL POSTER ON LEFT, DETAILS ON RIGHT */}
+        <div className="relative z-10 w-full px-6 sm:px-8 lg:px-12 py-8 pb-10 max-w-7xl mx-auto">
+          <div className="flex flex-row gap-8 lg:gap-10 items-end">
             
-            {/* POSTER IMAGE ON LEFT */}
-            <div className="w-48 sm:w-56 md:w-64 lg:w-72 aspect-[2/3] shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border-2 border-white/20 relative group bg-black/80">
+            {/* REFINED PROPORTIONAL POSTER ON LEFT (Compact & Sleek) */}
+            <div className="w-44 md:w-48 lg:w-52 aspect-[2/3] max-h-[320px] shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border-2 border-white/20 relative group bg-black/80">
               <img
                 src={item.posterUrl}
                 alt={item.title}
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
               />
               {/* Age rating badge on poster */}
-              <div className="absolute top-3 left-3 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[11px] font-bold tracking-wider text-orange-400 border border-orange-500/30 shadow-md">
-                {item.ageRating}
-              </div>
+              {item.ageRating && (
+                <div className="absolute top-3 left-3 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[11px] font-bold tracking-wider text-orange-400 border border-orange-500/30 shadow-md">
+                  {item.ageRating}
+                </div>
+              )}
 
               {/* Status badge */}
               <div className="absolute bottom-3 left-3 right-3 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md text-[11px] font-medium text-white/90 border border-white/15 text-center">
@@ -250,10 +393,10 @@ export const DetailsPage: React.FC = () => {
             </div>
 
             {/* DETAILS ON RIGHT */}
-            <div className="flex-1 flex flex-col justify-end space-y-4 text-center md:text-left">
+            <div className="flex-1 flex flex-col justify-end space-y-3.5 text-left">
               
               {/* Issue Category Eyebrow */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+              <div className="flex flex-wrap items-center justify-start gap-2.5">
                 <span className="rounded-md bg-orange-500 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-md shadow-orange-500/30">
                   {primaryCategory}
                 </span>
@@ -262,9 +405,9 @@ export const DetailsPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Majestic Title & Original Title */}
+              {/* Title & Original Title */}
               <div>
-                <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
                   {item.title}
                 </h1>
                 {item.originalTitle && item.originalTitle !== item.title && (
@@ -282,7 +425,7 @@ export const DetailsPage: React.FC = () => {
               )}
 
               {/* Ratings and Quick Technical Badges */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-1">
+              <div className="flex flex-wrap items-center justify-start gap-3 pt-1">
                 <div className="flex items-center gap-1.5 rounded-xl bg-black/60 border border-amber-400/30 px-3 py-1 text-xs font-bold text-amber-400 backdrop-blur-md shadow-sm">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                   <span>IMDb {item.ratings.imdb.toFixed(1)}</span>
@@ -313,7 +456,7 @@ export const DetailsPage: React.FC = () => {
               </div>
 
               {/* Action Buttons Row */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
+              <div className="flex flex-wrap items-center justify-start gap-3 pt-2">
                 {/* Trailer / Play Button */}
                 {item.trailerYoutubeId ? (
                   <button
@@ -359,7 +502,7 @@ export const DetailsPage: React.FC = () => {
                   }`}
                   title={favorite ? 'Favorited' : 'Add to Favorites'}
                 >
-                  <Heart className={`h-4 w-4 ${favorite ? 'fill-white' : ''}`} />
+                  <Heart className={`h-4 w-4 ${favorite ? 'fill-white text-white' : ''}`} />
                 </button>
               </div>
 
