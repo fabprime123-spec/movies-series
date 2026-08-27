@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "MovieAce - Film & Series Hub",
+  "description": "Modern glassmorphism movie and series discovery platform with comprehensive details, director & cast insights, global dubbed and subtitled languages, multi-filter search, personalized watchlist with Firebase cloud sync & Google OAuth, and smooth fluid animations.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
