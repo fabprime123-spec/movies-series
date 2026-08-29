@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { HeroBanner } from '../components/HeroBanner';
 import { MediaCard } from '../components/MediaCard';
+import { MediaGridSkeleton, HeroBannerSkeleton } from '../components/Skeletons';
 import { MediaItem } from '../types';
-import { MOCK_MEDIA, GENRES_LIST } from '../data/mockMedia';
+import { GENRES_LIST } from '../data/constants';
 import { fetchTrendingTitles, fetchDiscoverMedia } from '../services/tmdb';
-import { Sparkles, Film, Tv, Flame, Compass, Loader2 } from 'lucide-react';
+import { Sparkles, Film, Tv, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const HomePage: React.FC = () => {
-  const [trending, setTrending] = useState<MediaItem[]>(MOCK_MEDIA);
+  const [trending, setTrending] = useState<MediaItem[]>([]);
   const [topMovies, setTopMovies] = useState<MediaItem[]>([]);
   const [topShows, setTopShows] = useState<MediaItem[]>([]);
   const [topAnime, setTopAnime] = useState<MediaItem[]>([]);
@@ -29,13 +30,13 @@ export const HomePage: React.FC = () => {
         ]);
 
         if (isMounted) {
-          if (trendData.length > 0) setTrending(trendData);
-          if (moviesData.length > 0) setTopMovies(moviesData);
-          if (showsData.length > 0) setTopShows(showsData);
-          if (animeData.length > 0) setTopAnime(animeData);
+          setTrending(trendData || []);
+          setTopMovies(moviesData || []);
+          setTopShows(showsData || []);
+          setTopAnime(animeData || []);
         }
       } catch (err) {
-        console.warn('Using fallback home data:', err);
+        console.error('Home content load error:', err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -46,18 +47,20 @@ export const HomePage: React.FC = () => {
     };
   }, [selectedGenre]);
 
-  const featuredItem = trending[0] || MOCK_MEDIA[0];
+  const featuredItem = trending[0];
 
   return (
     <div className="w-full pb-20">
-      {/* Editorial Hero Banner */}
-      {featuredItem && (
+      {/* Editorial Hero Banner or Skeleton */}
+      {loading && !featuredItem ? (
+        <HeroBannerSkeleton />
+      ) : featuredItem ? (
         <HeroBanner
           item={featuredItem}
           onOpenDetails={() => navigate(`/details/${featuredItem.type}/${featuredItem.id}`)}
           onPlayTrailer={() => {}}
         />
-      )}
+      ) : null}
 
       <div className="w-full px-4 sm:px-8 lg:px-12 mt-8 space-y-12">
         {/* Genre Pill Selection */}
@@ -71,7 +74,7 @@ export const HomePage: React.FC = () => {
                 className={`whitespace-nowrap px-4 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
                   isSelected
                     ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
-                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                    : 'bg-surface text-muted hover:bg-surface/80 hover:text-foreground border border-border'
                 }`}
               >
                 {genre}
@@ -88,10 +91,10 @@ export const HomePage: React.FC = () => {
                 <Flame className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-white">
+                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-foreground">
                   Trending Releases
                 </h2>
-                <p className="text-xs text-white/50">Current global box-office and streaming phenomena</p>
+                <p className="text-xs text-muted">Current global box-office and streaming phenomena</p>
               </div>
             </div>
             <button
@@ -102,9 +105,11 @@ export const HomePage: React.FC = () => {
             </button>
           </div>
 
-          {loading && trending.length === 0 ? (
-            <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+          {loading ? (
+            <MediaGridSkeleton count={12} />
+          ) : trending.length === 0 ? (
+            <div className="p-12 text-center text-muted bg-card border border-border rounded-2xl">
+              No releases found for this category.
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
@@ -123,10 +128,10 @@ export const HomePage: React.FC = () => {
                 <Film className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-white">
+                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-foreground">
                   Acclaimed Feature Films
                 </h2>
-                <p className="text-xs text-white/50">Award-winning theatrical and streaming features</p>
+                <p className="text-xs text-muted">Award-winning theatrical and streaming features</p>
               </div>
             </div>
             <button
@@ -137,11 +142,19 @@ export const HomePage: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-            {(topMovies.length > 0 ? topMovies : MOCK_MEDIA.filter(m => m.type === 'movie')).slice(0, 6).map((item) => (
-              <MediaCard key={item.id} item={item} />
-            ))}
-          </div>
+          {loading ? (
+            <MediaGridSkeleton count={6} />
+          ) : topMovies.length === 0 ? (
+            <div className="p-8 text-center text-muted bg-card border border-border rounded-2xl">
+              No feature films found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              {topMovies.slice(0, 6).map((item) => (
+                <MediaCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Section 3: High-Concept TV Series */}
@@ -152,10 +165,10 @@ export const HomePage: React.FC = () => {
                 <Tv className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-white">
+                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-foreground">
                   Peak Television & Series
                 </h2>
-                <p className="text-xs text-white/50">Compelling serial narratives and seasonal drama</p>
+                <p className="text-xs text-muted">Compelling serial narratives and seasonal drama</p>
               </div>
             </div>
             <button
@@ -166,11 +179,19 @@ export const HomePage: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-            {(topShows.length > 0 ? topShows : MOCK_MEDIA.filter(m => m.type === 'tv')).slice(0, 6).map((item) => (
-              <MediaCard key={item.id} item={item} />
-            ))}
-          </div>
+          {loading ? (
+            <MediaGridSkeleton count={6} />
+          ) : topShows.length === 0 ? (
+            <div className="p-8 text-center text-muted bg-card border border-border rounded-2xl">
+              No TV series found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              {topShows.slice(0, 6).map((item) => (
+                <MediaCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Section 4: Anime & Animation Masterpieces */}
@@ -181,10 +202,10 @@ export const HomePage: React.FC = () => {
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-white">
+                <h2 className="text-xl sm:text-2xl font-bold font-['Outfit',sans-serif] text-foreground">
                   Anime & Animation Spotlight
                 </h2>
-                <p className="text-xs text-white/50">Iconic animation, visual mastery, and Japanese serialized sagas</p>
+                <p className="text-xs text-muted">Iconic animation, visual mastery, and Japanese serialized sagas</p>
               </div>
             </div>
             <button
@@ -195,11 +216,19 @@ export const HomePage: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-            {(topAnime.length > 0 ? topAnime : MOCK_MEDIA.filter(m => m.type === 'anime')).slice(0, 6).map((item) => (
-              <MediaCard key={item.id} item={item} />
-            ))}
-          </div>
+          {loading ? (
+            <MediaGridSkeleton count={6} />
+          ) : topAnime.length === 0 ? (
+            <div className="p-8 text-center text-muted bg-card border border-border rounded-2xl">
+              No anime titles found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              {topAnime.slice(0, 6).map((item) => (
+                <MediaCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>

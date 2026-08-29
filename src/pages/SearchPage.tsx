@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, Filter, X, Sparkles, Star, Film, Tv, Users, SlidersHorizontal, ArrowUpDown, Volume2, Globe, Check, RotateCcw, Loader2 } from 'lucide-react';
+import { Search, Filter, X, Sparkles, Star, Film, Tv, Users, SlidersHorizontal, ArrowUpDown, Volume2, Globe, Check, RotateCcw } from 'lucide-react';
 import { MediaCard } from '../components/MediaCard';
+import { MediaGridSkeleton, ActorCardSkeleton } from '../components/Skeletons';
 import { MediaItem, ActorItem } from '../types';
-import { MOCK_MEDIA, GENRES_LIST, GLOBAL_LANGUAGES, STREAMING_SERVICES } from '../data/mockMedia';
+import { GENRES_LIST, GLOBAL_LANGUAGES, STREAMING_SERVICES } from '../data/constants';
 import { searchTmdbFull, fetchDiscoverMedia } from '../services/tmdb';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -66,12 +67,12 @@ export const SearchPage: React.FC = () => {
           const mediaType = typeFilter === 'actors' ? 'all' : typeFilter;
           const data = await fetchDiscoverMedia(mediaType, selectedGenre === 'All Genres' ? '' : selectedGenre);
           if (isMounted) {
-            setMediaResults(data.length > 0 ? data : MOCK_MEDIA);
+            setMediaResults(data || []);
             setActorResults([]);
           }
         }
       } catch (err) {
-        console.warn('Search query error:', err);
+        console.error('Search query error:', err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -370,10 +371,15 @@ export const SearchPage: React.FC = () => {
 
       {/* Results Rendering */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-          <p className="text-xs text-white/50">Searching cinematic catalog...</p>
-        </div>
+        typeFilter === 'actors' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+            {Array.from({ length: 12 }).map((_, idx) => (
+              <ActorCardSkeleton key={idx} />
+            ))}
+          </div>
+        ) : (
+          <MediaGridSkeleton count={18} />
+        )
       ) : typeFilter === 'actors' ? (
         /* Actors List Grid */
         actorResults.length > 0 ? (

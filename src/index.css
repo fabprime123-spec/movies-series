@@ -1,42 +1,101 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-muted: var(--muted);
+  --color-foreground: var(--foreground);
+}
+
+:root {
+  --background: #FFFFFF;
+  --card: #DDDDDD;
+  --surface: #CCCCCC;
+  --border: #BBBBBB;
+  --ring: #A1A1AA;
+  --muted: #52525B;
+  --foreground: #09090B;
+}
+
+.dark {
+  --background: #000000;
+  --card: #141414;
+  --surface: #19191F;
+  --border: #292932;
+  --ring: #3F3F46;
+  --muted: #71717A;
+  --foreground: #FAFAFA;
+}
+
 @layer base {
   body {
-    background: radial-gradient(circle at 50% 0%, #111422 0%, #0c0d12 60%, #06070a 100%);
-    background-attachment: fixed;
+    background-color: var(--background);
+    color: var(--foreground);
     min-height: 100vh;
-    color: #f1f5f9;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
 
-/* Custom Scrollbar with Backdrop Blur */
+/* Custom Scrollbar - 100% Transparent track, no overlay, accent color thumb, no buttons (recreated from movieace) */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:single-button,
+::-webkit-scrollbar-button:vertical:decrement,
+::-webkit-scrollbar-button:vertical:increment,
+::-webkit-scrollbar-button:horizontal:decrement,
+::-webkit-scrollbar-button:horizontal:increment,
+::-webkit-scrollbar-button:start,
+::-webkit-scrollbar-button:end {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(12, 13, 18, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: transparent !important;
+  border: none !important;
+}
+
+::-webkit-scrollbar-track-piece {
+  background: transparent !important;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, 0.45); /* Warm orange/coral glow matching the design */
+  background: var(--accent-color, var(--accent-primary, #f97316));
   border-radius: 9999px;
-  border: 2px solid rgba(12, 13, 18, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: background 0.2s ease, transform 0.2s ease;
+  border: none;
+  transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(249, 115, 22, 0.85);
+  background: var(--accent-hover, #ea580c);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* Utility to hide scrollbars for horizontal carousel strips */
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(249, 115, 22, 0.5) rgba(12, 13, 18, 0.35);
+  scrollbar-color: var(--accent-color, var(--accent-primary, #f97316)) transparent;
 }
 
 .font-editorial {
@@ -44,23 +103,16 @@
 }
 
 .immersive-bg {
-  background: radial-gradient(circle at 50% 0%, #111422 0%, #0c0d12 60%, #06070a 100%);
+  background-color: var(--background);
 }
 
 .immersive-glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 .immersive-glass-card {
-  background: rgba(18, 22, 34, 0.65);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card);
+  border: 1px solid var(--border);
 }
 
-.cinema-vignette {
-  background: linear-gradient(180deg, rgba(12, 13, 18, 0.2) 0%, rgba(12, 13, 18, 0.6) 50%, #0c0d12 100%);
-}

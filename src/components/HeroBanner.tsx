@@ -15,6 +15,8 @@ import {
 import { MediaItem } from '../types';
 import { useWatchlist } from '../context/WatchlistContext';
 import { useTrailer } from '../context/TrailerContext';
+import { useTheme } from '../context/ThemeContext';
+import { FilmGrainOverlay } from './FilmGrainOverlay';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,6 +36,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   const navigate = useNavigate();
   const { playTrailer } = useTrailer();
   const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+  const { accentConfig } = useTheme();
 
   const allItems = items.length > 0 ? items : item ? [item] : [];
   const featuredItems = allItems.filter(i => i.featured).slice(0, 5);
@@ -104,6 +107,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               referrerPolicy="no-referrer"
               className="h-full w-full object-cover object-center filter brightness-90"
             />
+            {/* 35mm Cinematic Film Grain Texture */}
+            <FilmGrainOverlay opacity={0.36} />
+            
             {/* Multi-layered glassmorphic & vignette gradients */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/70 to-[#0c0d12]/20" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d12] via-[#0c0d12]/80 to-transparent w-full md:w-3/4" />
@@ -123,7 +129,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             >
               {/* Badges row */}
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                <span className="flex items-center gap-1 rounded-lg bg-orange-500 px-2.5 py-1 text-white backdrop-blur-md shadow-md shadow-orange-500/30 uppercase tracking-wider text-[11px] font-bold">
+                <span className={`flex items-center gap-1 rounded-lg bg-gradient-to-r ${accentConfig.gradient} px-2.5 py-1 text-white backdrop-blur-md shadow-md uppercase tracking-wider text-[11px] font-bold`}>
                   <Flame className="h-3.5 w-3.5 fill-current" />
                   Trending #{currentItem.trendingRank || 1}
                 </span>
@@ -132,7 +138,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                   {currentItem.type === 'movie' ? 'Cinema Premiere' : currentItem.type === 'tv' ? 'Peak Series' : 'Animation'}
                 </span>
 
-                <span className="rounded-lg bg-orange-500/20 px-2 py-1 text-orange-400 backdrop-blur-md border border-orange-500/30 text-[11px] font-bold">
+                <span className={`rounded-lg ${accentConfig.badgeBg} px-2 py-1 ${accentConfig.badgeText} backdrop-blur-md border border-current/30 text-[11px] font-bold`}>
                   {currentItem.ageRating}
                 </span>
 
@@ -154,7 +160,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                   {currentItem.title}
                 </h1>
                 {currentItem.tagline && (
-                  <p className="mt-1 text-sm sm:text-base font-serif italic text-orange-300/90">
+                  <p className="mt-1 text-sm sm:text-base font-serif italic text-amber-200/90">
                     "{currentItem.tagline}"
                   </p>
                 )}
@@ -168,7 +174,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               {/* Global Audio Dubs & Subtitles pill indicators */}
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-white/80">
                 <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 backdrop-blur-md border border-white/10">
-                  <Volume2 className="h-3.5 w-3.5 text-orange-400" />
+                  <Volume2 className={`h-3.5 w-3.5 ${accentConfig.badgeText}`} />
                   <span><strong>{currentItem.dubbedLanguages.length}</strong> Dubbed Audio Tracks</span>
                 </div>
                 <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 backdrop-blur-md border border-white/10">
@@ -188,7 +194,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <button
                   id={`hero-play-trailer-${currentItem.id}`}
                   onClick={handleTrailerClick}
-                  className="flex items-center gap-2 rounded-2xl bg-orange-500 hover:bg-orange-600 px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-orange-500/30 hover:scale-102 active:scale-98 transition-all"
+                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-95 px-6 py-3.5 text-sm font-bold text-white shadow-xl hover:scale-102 active:scale-98 transition-all`}
                 >
                   <Play className="h-4 w-4 fill-white" />
                   <span>Watch Trailer</span>
@@ -208,8 +214,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                   onClick={handleWatchlistToggle}
                   className={`flex h-12 w-12 items-center justify-center rounded-2xl backdrop-blur-xl border transition-all active:scale-90 ${
                     inWatchlist
-                      ? 'bg-orange-500/30 border-orange-400 text-orange-400 shadow-md shadow-orange-500/20'
-                      : 'bg-white/10 border-white/10 text-white hover:bg-white/20 hover:text-orange-400'
+                      ? `${accentConfig.badgeBg} border-current ${accentConfig.badgeText} shadow-md`
+                      : 'bg-white/10 border-white/10 text-white hover:bg-white/20'
                   }`}
                   title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
                 >
@@ -237,7 +243,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                   key={item.id}
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    currentIndex === idx ? 'w-6 bg-orange-500' : 'w-2 bg-white/30 hover:bg-white/50'
+                    currentIndex === idx ? `w-6 bg-gradient-to-r ${accentConfig.gradient}` : 'w-2 bg-white/30 hover:bg-white/50'
                   }`}
                   aria-label={`Slide ${idx + 1}`}
                 />
@@ -253,6 +259,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             </button>
           </div>
         )}
+
       </div>
     </section>
   );

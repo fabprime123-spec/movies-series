@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ActorItem, MediaItem } from '../types';
 import { fetchPopularActors, searchTmdbMedia } from '../services/tmdb';
+import { ActorCardSkeleton } from './Skeletons';
 import { Users, Star, Film, Sparkles, Search, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -79,7 +80,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {[...Array(12)].map((_, i) => (
-            <div key={i} className="aspect-[3/4] rounded-2xl bg-white/5 animate-pulse" />
+            <ActorCardSkeleton key={i} />
           ))}
         </div>
       ) : (

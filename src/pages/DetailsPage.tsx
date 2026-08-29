@@ -24,22 +24,29 @@ import {
   Calendar,
   Building2,
   DollarSign,
-  Loader2
+  Loader2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { MediaItem, MediaType, Episode } from '../types';
 import { useWatchlist } from '../context/WatchlistContext';
 import { useTrailer } from '../context/TrailerContext';
+import { useHistory } from '../context/HistoryContext';
+import { useTheme } from '../context/ThemeContext';
+import { FilmGrainOverlay } from '../components/FilmGrainOverlay';
+import { MediaImageGallery } from '../components/MediaImageGallery';
 import { fetchMediaDetails, fetchSeasonEpisodes } from '../services/tmdb';
-import { MOCK_MEDIA } from '../data/mockMedia';
+import { MediaDetailsSkeleton } from '../components/Skeletons';
 import { MediaCard } from '../components/MediaCard';
 import { motion, AnimatePresence } from 'motion/react';
 
-type DetailTab = 'overview' | 'episodes' | 'cast' | 'languages' | 'providers' | 'journal' | 'similar';
+type DetailTab = 'overview' | 'gallery' | 'episodes' | 'cast' | 'languages' | 'providers' | 'journal' | 'similar';
 
 export const DetailsPage: React.FC = () => {
   const { type = 'movie', id = '' } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
   const { playTrailer } = useTrailer();
+  const { addToHistory } = useHistory();
+  const { accentConfig } = useTheme();
 
   const [item, setItem] = useState<MediaItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -77,6 +84,7 @@ export const DetailsPage: React.FC = () => {
         const data = await fetchMediaDetails(id, type as MediaType);
         if (isMounted) {
           setItem(data);
+          addToHistory(data);
           if (data.seasons && data.seasons.length > 0) {
             const firstSeason = data.seasons.find((s) => s.seasonNumber > 0) || data.seasons[0];
             setSelectedSeasonNumber(firstSeason.seasonNumber);
@@ -86,15 +94,7 @@ export const DetailsPage: React.FC = () => {
           }
         }
       } catch (err) {
-        console.warn('Error fetching media details:', err);
-        const fallback = MOCK_MEDIA.find((m) => m.id === id);
-        if (isMounted && fallback) {
-          setItem(fallback);
-          if (fallback.seasons && fallback.seasons.length > 0) {
-            setSelectedSeasonNumber(fallback.seasons[0].seasonNumber);
-            setSeasonEpisodes(fallback.seasons[0].episodes || []);
-          }
-        }
+        console.error('Error fetching media details:', err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -136,12 +136,7 @@ export const DetailsPage: React.FC = () => {
   }, [selectedSeasonNumber, item?.id]);
 
   if (loading && !item) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
-        <p className="text-sm text-white/50">Retrieving film archival records...</p>
-      </div>
-    );
+    return <MediaDetailsSkeleton />;
   }
 
   if (!item) {
@@ -201,6 +196,9 @@ export const DetailsPage: React.FC = () => {
             alt={item.title}
             className="w-full h-full object-cover object-center filter brightness-[0.95] contrast-[1.05]"
           />
+          {/* 35mm Cinematic Film Grain Overlay */}
+          <FilmGrainOverlay opacity={1} />
+          
           {/* Smooth bottom fade to page background */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/40 to-black/30" />
           
@@ -233,7 +231,7 @@ export const DetailsPage: React.FC = () => {
               className="w-full h-full object-cover object-center"
             />
             {item.ageRating && (
-              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-bold text-orange-400 border border-orange-500/30">
+              <div className={`absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 text-[10px] font-bold ${accentConfig.badgeText} border border-current/30`}>
                 {item.ageRating}
               </div>
             )}
@@ -249,7 +247,7 @@ export const DetailsPage: React.FC = () => {
 
           {/* Tagline */}
           {item.tagline && (
-            <p className="text-xs italic text-white/60">
+            <p className="text-xs italic text-amber-200/80">
               "{item.tagline}"
             </p>
           )}
@@ -307,7 +305,7 @@ export const DetailsPage: React.FC = () => {
               }}
               className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-bold text-xs tracking-wide shadow-lg transition-all active:scale-95 ${
                 inWatchlist
-                  ? 'bg-orange-500 text-white border border-orange-400'
+                  ? `bg-gradient-to-r ${accentConfig.gradient} text-white border border-transparent`
                   : 'bg-white text-black hover:bg-white/90'
               }`}
             >
@@ -320,7 +318,7 @@ export const DetailsPage: React.FC = () => {
           {item.trailerYoutubeId && (
             <button
               onClick={handleTrailerClick}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 text-white font-bold text-xs shadow-lg shadow-orange-500/25 active:scale-95 transition-all mt-1"
+              className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} text-white font-bold text-xs shadow-lg active:scale-95 transition-all mt-1`}
             >
               <Play className="w-4 h-4 fill-white" />
               <span>Play Official Trailer</span>
@@ -341,10 +339,14 @@ export const DetailsPage: React.FC = () => {
             alt={item.title}
             className="h-full w-full object-cover object-center filter brightness-[0.92] contrast-[1.03]"
           />
+          {/* 35mm Cinematic Film Grain Overlay */}
+          <FilmGrainOverlay opacity={0.36} />
+          
           {/* Refined gradient overlays that maintain art visibility while ensuring high text contrast */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/55 to-black/30" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d12]/90 via-[#0c0d12]/40 to-transparent" />
         </div>
+
 
         {/* Top Back Navigation Bar */}
         <div className="relative z-20 w-full px-6 sm:px-8 lg:px-12 pt-6 mb-auto flex items-center justify-between">
@@ -492,6 +494,16 @@ export const DetailsPage: React.FC = () => {
                   <span>{inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}</span>
                 </button>
 
+                {/* Open Dedicated Gallery Route */}
+                <button
+                  onClick={() => navigate(`/gallery/${item.type}/${item.id}`)}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/80 hover:bg-white/10 hover:text-white transition-all shadow-sm"
+                  title="Open Dedicated Fullscreen Photo Gallery"
+                >
+                  <ImageIcon className="h-4 w-4 text-amber-400" />
+                  <span className="hidden sm:inline">Photo Gallery</span>
+                </button>
+
                 {/* Favorite Toggle */}
                 <button
                   onClick={() => toggleFavorite(item)}
@@ -519,6 +531,7 @@ export const DetailsPage: React.FC = () => {
         <div className="flex items-center gap-2 border-b border-white/10 pb-3 overflow-x-auto scrollbar-none">
           {[
             { id: 'overview', label: 'Story & Details', icon: Film },
+            { id: 'gallery', label: 'Image Gallery & Stills', icon: ImageIcon },
             ...((item.type === 'tv' || item.type === 'anime' || seasons.length > 0)
               ? [{ id: 'episodes', label: `Episodes (${item.totalEpisodes || seasons.reduce((a, c) => a + c.episodeCount, 0) || 12})`, icon: Layers }]
               : []),
@@ -535,7 +548,7 @@ export const DetailsPage: React.FC = () => {
                 onClick={() => setActiveTab(tab.id as DetailTab)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
                   isSelected
-                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                    ? `bg-gradient-to-r ${accentConfig.gradient} text-white shadow-md`
                     : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
                 }`}
               >
@@ -646,6 +659,36 @@ export const DetailsPage: React.FC = () => {
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Gallery Teaser Card */}
+              <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-orange-400" />
+                    <span>Media Photo Gallery</span>
+                  </h3>
+                  <button
+                    onClick={() => navigate(`/gallery/${item.type}/${item.id}`)}
+                    className="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"
+                  >
+                    <span>Full Gallery Page →</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <img
+                    src={item.backdropUrl || item.posterUrl}
+                    alt="Still 1"
+                    onClick={() => navigate(`/gallery/${item.type}/${item.id}`)}
+                    className="w-full aspect-video object-cover rounded-xl border border-white/10 cursor-pointer hover:opacity-80 transition-opacity hover:scale-[1.02]"
+                  />
+                  <img
+                    src={item.posterUrl}
+                    alt="Still 2"
+                    onClick={() => navigate(`/gallery/${item.type}/${item.id}`)}
+                    className="w-full aspect-video object-cover rounded-xl border border-white/10 cursor-pointer hover:opacity-80 transition-opacity hover:scale-[1.02]"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -959,6 +1002,13 @@ export const DetailsPage: React.FC = () => {
                 className="w-full rounded-2xl border border-white/10 bg-black/40 p-4 text-xs sm:text-sm text-white placeholder-white/40 focus:border-orange-500 focus:outline-none"
               />
             </div>
+          </div>
+        )}
+
+        {/* Tab: Media Image Gallery */}
+        {activeTab === 'gallery' && (
+          <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl">
+            <MediaImageGallery media={item} />
           </div>
         )}
 

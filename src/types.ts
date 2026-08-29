@@ -1,4 +1,44 @@
-export type NavTab = 'home' | 'movies' | 'shows' | 'actors' | 'watchlist';
+export type NavTab = 'home' | 'movies' | 'shows' | 'actors' | 'upcoming' | 'watchlist' | 'history';
+
+export interface MediaImage {
+  url: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: number;
+  voteAverage?: number;
+  type?: 'backdrop' | 'poster' | 'still' | 'logo';
+}
+
+export interface GalleryImages {
+  backdrops: MediaImage[];
+  posters: MediaImage[];
+  logos?: MediaImage[];
+}
+
+export interface UpcomingItem {
+  id: string;
+  title: string;
+  originalTitle?: string;
+  tagline?: string;
+  overview: string;
+  type: MediaType;
+  releaseDate: string; // ISO or YYYY-MM-DD or formatted date
+  targetTimestamp: number; // Unix timestamp in ms for real-time countdown
+  posterUrl: string;
+  backdropUrl: string;
+  genres: string[];
+  universe?: 'Marvel Cinematic Universe' | 'DC Universe' | 'Star Wars' | 'Sci-Fi' | 'Anime' | 'Original' | 'Blockbuster';
+  studio?: string;
+  director?: string;
+  cast?: string[];
+  trailerYoutubeId?: string;
+  hypeCount?: number;
+  isConfirmedDate?: boolean;
+  statusText?: string;
+  anticipatedSeason?: number;
+  anticipatedEpisode?: number;
+  images?: GalleryImages;
+}
 
 export interface ActorItem {
   id: string;
@@ -132,6 +172,7 @@ export interface MediaItem {
   similarMediaIds: string[];
   featured?: boolean;
   trendingRank?: number;
+  images?: GalleryImages;
 }
 
 export type WatchlistStatus = 'plan_to_watch' | 'watching' | 'completed' | 'on_hold' | 'dropped';
@@ -167,4 +208,13 @@ export interface UserProfile {
   displayName: string | null;
   photoURL: string | null;
   isAnonymous: boolean;
+}
+
+export type AccentColor = 'orange' | 'crimson' | 'emerald' | 'indigo' | 'cyan' | 'amber';
+
+export interface HistoryItem {
+  id: string; // mediaId
+  media: MediaItem;
+  viewedAt: number; // timestamp in ms
+  viewCount?: number;
 }

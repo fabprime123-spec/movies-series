@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MediaCard } from '../components/MediaCard';
+import { MediaGridSkeleton } from '../components/Skeletons';
 import { MediaItem } from '../types';
-import { MOCK_MEDIA, GENRES_LIST } from '../data/mockMedia';
+import { GENRES_LIST } from '../data/constants';
 import { fetchDiscoverMedia } from '../services/tmdb';
-import { Film, Filter, Loader2, Sparkles } from 'lucide-react';
+import { Film, Filter } from 'lucide-react';
 
 export const MoviesPage: React.FC = () => {
   const [movies, setMovies] = useState<MediaItem[]>([]);
@@ -22,11 +23,10 @@ export const MoviesPage: React.FC = () => {
           sortBy
         );
         if (isMounted) {
-          setMovies(data.length > 0 ? data : MOCK_MEDIA.filter((m) => m.type === 'movie'));
+          setMovies(data || []);
         }
       } catch (err) {
-        console.warn('Error loading movies:', err);
-        if (isMounted) setMovies(MOCK_MEDIA.filter((m) => m.type === 'movie'));
+        console.error('Error loading movies:', err);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -40,29 +40,29 @@ export const MoviesPage: React.FC = () => {
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 py-8 pb-24 space-y-8">
       {/* Editorial Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border pb-6">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-widest mb-1.5">
             <Film className="w-4 h-4" />
             <span>The Cinema Edition</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold font-['Outfit',sans-serif] text-white tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold font-['Outfit',sans-serif] text-foreground tracking-tight">
             Feature Films & Premieres
           </h1>
-          <p className="text-sm text-white/50 mt-1 max-w-2xl">
+          <p className="text-sm text-muted mt-1 max-w-2xl">
             Explore global cinema classics, modern blockbusters, and award-winning festival premieres with deep technical and audio specs.
           </p>
         </div>
 
         {/* Sort selector */}
         <div className="flex items-center gap-3">
-          <label className="text-xs text-white/50 flex items-center gap-1">
+          <label className="text-xs text-muted flex items-center gap-1">
             <Filter className="w-3.5 h-3.5" /> Sort:
           </label>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="rounded-xl border border-white/10 bg-[#151722] px-3 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-foreground focus:border-ring focus:outline-none"
           >
             <option value="popularity.desc">Most Popular</option>
             <option value="vote_average.desc">Highest Rated</option>
@@ -82,8 +82,8 @@ export const MoviesPage: React.FC = () => {
               onClick={() => setSelectedGenre(genre)}
               className={`whitespace-nowrap px-4 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
                 isSelected
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                  : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                  ? 'bg-amber-500 text-black font-bold shadow-md shadow-amber-500/20'
+                  : 'bg-surface text-muted hover:bg-surface/80 hover:text-foreground border border-border'
               }`}
             >
               {genre}
@@ -94,8 +94,10 @@ export const MoviesPage: React.FC = () => {
 
       {/* Media Grid */}
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        <MediaGridSkeleton count={18} />
+      ) : movies.length === 0 ? (
+        <div className="p-12 text-center text-muted bg-card border border-border rounded-2xl">
+          No films found matching your criteria.
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">

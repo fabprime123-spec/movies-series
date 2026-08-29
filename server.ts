@@ -141,11 +141,12 @@ app.get("/api/tmdb/details/:type/:id", async (req, res) => {
     const mediaType = type === "tv" || type === "anime" ? "tv" : "movie";
 
     const appendFields =
-      "credits,videos,recommendations,similar,watch/providers,translations," +
+      "credits,videos,recommendations,similar,watch/providers,translations,images," +
       (mediaType === "movie" ? "release_dates" : "content_ratings");
 
     const data = await fetchFromTmdb(`/${mediaType}/${id}`, {
       append_to_response: appendFields,
+      include_image_language: "en,null,ja,es,fr,de,it,pt,ko,zh",
     });
 
     // If TV show, also fetch Season 1 episodes if available
@@ -221,7 +222,50 @@ app.get("/api/tmdb/actor/:id", async (req, res) => {
   }
 });
 
-// 8. Health check
+// 8. Upcoming Media
+app.get("/api/tmdb/upcoming", async (req, res) => {
+  try {
+    const page = (req.query.page as string) || "1";
+    const type = (req.query.type as string) || "all";
+
+    if (type === "movie") {
+      const data = await fetchFromTmdb("/movie/upcoming", { page });
+      return res.json(data);
+    }
+
+    if (type === "tv") {
+      const data = await fetchFromTmdb("/tv/on_the_air", { page });
+      return res.json(data);
+    }
+
+    // Combine upcoming movies & on_the_air tv
+    const [movies, tv] = await Promise.all([
+      fetchFromTmdb("/movie/upcoming", { page }),
+      fetchFromTmdb("/tv/on_the_air", { page }),
+    ]);
+
+    const combined = [...(movies.results || []), ...(tv.results || [])];
+    res.json({ results: combined, page: Number(page), total_pages: 10 });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to fetch upcoming media" });
+  }
+});
+
+// 9. Media Images (Backdrops, Posters, Logos)
+app.get("/api/tmdb/images/:type/:id", async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const mediaType = type === "tv" || type === "anime" ? "tv" : "movie";
+    const data = await fetchFromTmdb(`/${mediaType}/${id}/images`, {
+      include_image_language: "en,null,ja,es,fr,de,it,pt,ko,zh",
+    });
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to fetch media images" });
+  }
+});
+
+// 10. Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", tmdb_configured: !!TMDB_TOKEN });
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, RotateCcw, Check, Sparkles, Volume2, Subtitles, Film, Tv, Star, Calendar, Radio } from 'lucide-react';
 import { FilterOptions } from '../types';
-import { GENRES_LIST, GLOBAL_LANGUAGES, STREAMING_SERVICES } from '../data/mockMedia';
+import { GENRES_LIST, GLOBAL_LANGUAGES, STREAMING_SERVICES } from '../data/constants';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface FilterDrawerProps {

@@ -1,5 +1,4 @@
-import { MediaItem, MediaType, CastMember, CrewMember, Season, Episode, LanguageTrack, SubtitleTrack, StreamingProvider, ActorItem } from '../types';
-import { MOCK_MEDIA } from '../data/mockMedia';
+import { MediaItem, MediaType, CastMember, CrewMember, Season, Episode, LanguageTrack, SubtitleTrack, StreamingProvider, ActorItem, GalleryImages, MediaImage, UpcomingItem } from '../types';
 
 const GENRE_MAP: Record<number, string> = {
   28: 'Action',
@@ -347,6 +346,67 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     });
   }
 
+  // Extract Multiple Images from TMDB
+  const backdrops: MediaImage[] = [];
+  const posters: MediaImage[] = [];
+  const logos: MediaImage[] = [];
+
+  if (tmdb.images?.backdrops && Array.isArray(tmdb.images.backdrops)) {
+    tmdb.images.backdrops.forEach((b: any) => {
+      if (b.file_path) {
+        backdrops.push({
+          url: `https://image.tmdb.org/t/p/original${b.file_path}`,
+          width: b.width,
+          height: b.height,
+          aspectRatio: b.aspect_ratio,
+          voteAverage: b.vote_average,
+          type: 'backdrop',
+        });
+      }
+    });
+  }
+
+  if (tmdb.images?.posters && Array.isArray(tmdb.images.posters)) {
+    tmdb.images.posters.forEach((p: any) => {
+      if (p.file_path) {
+        posters.push({
+          url: `https://image.tmdb.org/t/p/w780${p.file_path}`,
+          width: p.width,
+          height: p.height,
+          aspectRatio: p.aspect_ratio,
+          voteAverage: p.vote_average,
+          type: 'poster',
+        });
+      }
+    });
+  }
+
+  if (tmdb.images?.logos && Array.isArray(tmdb.images.logos)) {
+    tmdb.images.logos.forEach((l: any) => {
+      if (l.file_path) {
+        logos.push({
+          url: `https://image.tmdb.org/t/p/w500${l.file_path}`,
+          width: l.width,
+          height: l.height,
+          type: 'logo',
+        });
+      }
+    });
+  }
+
+  if (backdrops.length === 0 && backdropPath) {
+    backdrops.push({ url: backdropPath, type: 'backdrop' });
+  }
+  if (posters.length === 0 && posterPath) {
+    posters.push({ url: posterPath, type: 'poster' });
+  }
+
+  const galleryImages: GalleryImages = {
+    backdrops,
+    posters,
+    logos: logos.length > 0 ? logos : undefined,
+  };
+
   const voteAverage = tmdb.vote_average ? Math.round(tmdb.vote_average * 10) / 10 : 7.6;
 
   return {
@@ -392,6 +452,7 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     similarMediaIds: (tmdb.recommendations?.results || tmdb.similar?.results || [])
       .slice(0, 6)
       .map((item: any) => String(item.id)),
+    images: galleryImages,
   };
 }
 
@@ -406,9 +467,9 @@ export async function fetchTrendingTitles(mediaType: 'all' | 'movie' | 'tv' = 'a
       return data.results.map((item: any) => transformTmdbToMediaItem(item));
     }
   } catch (err) {
-    console.warn('Falling back to local high-res catalog:', err);
+    console.warn('Trending titles fetch error:', err);
   }
-  return MOCK_MEDIA;
+  return [];
 }
 
 export async function fetchDiscoverMedia(
@@ -437,15 +498,10 @@ export async function fetchDiscoverMedia(
       );
     }
   } catch (err) {
-    console.warn('Falling back to mock media for discover:', err);
+    console.warn('Discover fetch error:', err);
   }
 
-  // Filter fallback
-  return MOCK_MEDIA.filter((item) => {
-    if (type !== 'all' && item.type !== type) return false;
-    if (genre && genre !== 'All Genres' && !item.genres.includes(genre)) return false;
-    return true;
-  });
+  return [];
 }
 
 export async function fetchMediaDetails(id: string, type: MediaType = 'movie'): Promise<MediaItem> {
@@ -455,9 +511,7 @@ export async function fetchMediaDetails(id: string, type: MediaType = 'movie'): 
     const data = await res.json();
     return transformTmdbToMediaItem(data, type);
   } catch (err) {
-    console.warn(`Could not fetch details for ${id}, using existing or fallback:`, err);
-    const existing = MOCK_MEDIA.find((m) => m.id === id);
-    if (existing) return existing;
+    console.error(`Could not fetch details for ${id}:`, err);
     throw err;
   }
 }
@@ -517,19 +571,137 @@ export async function searchTmdbFull(query: string): Promise<{ media: MediaItem[
       return { media, actors };
     }
   } catch (err) {
-    console.warn('Search fallback to local filter:', err);
+    console.warn('Search API error:', err);
   }
-  const filtered = MOCK_MEDIA.filter((item) =>
-    item.title.toLowerCase().includes(query.toLowerCase()) ||
-    item.genres.some((g) => g.toLowerCase().includes(query.toLowerCase()))
-  );
-  return { media: filtered, actors: [] };
+  return { media: [], actors: [] };
 }
 
 
 export async function searchTmdbMedia(query: string): Promise<MediaItem[]> {
   const result = await searchTmdbFull(query);
   return result.media;
+}
+
+export async function fetchUpcomingMedia(page = 1, type: 'all' | 'movie' | 'tv' = 'all'): Promise<MediaItem[]> {
+  try {
+    const res = await fetch(`/api/tmdb/upcoming?page=${page}&type=${type}`);
+    if (!res.ok) throw new Error('Upcoming API error');
+    const data = await res.json();
+    if (data.results && Array.isArray(data.results)) {
+      return data.results.map((item: any) => transformTmdbToMediaItem(item, type === 'all' ? undefined : type));
+    }
+  } catch (err) {
+    console.warn('Upcoming API error:', err);
+  }
+  return [];
+}
+
+export async function fetchUpcomingReleases(): Promise<UpcomingItem[]> {
+  try {
+    const res = await fetch('/api/tmdb/upcoming?page=1&type=all');
+    if (!res.ok) throw new Error('Upcoming releases API error');
+    const data = await res.json();
+    if (data.results && Array.isArray(data.results)) {
+      return data.results.map((item: any) => {
+        const media = transformTmdbToMediaItem(item);
+        const releaseDateStr = item.release_date || item.first_air_date || '';
+        let targetTimestamp = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        if (releaseDateStr) {
+          const parsed = new Date(releaseDateStr).getTime();
+          if (!isNaN(parsed) && parsed > Date.now()) {
+            targetTimestamp = parsed;
+          } else {
+            // Future simulated premiere
+            targetTimestamp = Date.now() + (Math.abs(item.id % 90) + 15) * 24 * 60 * 60 * 1000;
+          }
+        }
+
+        const genres = media.genres;
+        let universe: any = 'Original';
+        if (genres.includes('Action') || genres.includes('Adventure')) {
+          if (item.title?.includes('Marvel') || item.title?.includes('Spider') || item.title?.includes('Captain') || item.title?.includes('Avengers')) {
+            universe = 'Marvel Cinematic Universe';
+          } else if (item.title?.includes('Batman') || item.title?.includes('Superman') || item.title?.includes('DC')) {
+            universe = 'DC Universe';
+          } else if (item.title?.includes('Star Wars')) {
+            universe = 'Star Wars';
+          } else {
+            universe = 'Blockbuster';
+          }
+        } else if (genres.includes('Sci-Fi')) {
+          universe = 'Sci-Fi';
+        } else if (media.type === 'anime' || genres.includes('Animation')) {
+          universe = 'Anime';
+        }
+
+        const upcoming: UpcomingItem = {
+          id: String(item.id),
+          title: media.title,
+          originalTitle: media.originalTitle,
+          tagline: media.tagline,
+          overview: media.overview || 'Worldwide theatrical and streaming release coming soon.',
+          type: media.type,
+          releaseDate: releaseDateStr || 'Coming Soon',
+          targetTimestamp,
+          posterUrl: media.posterUrl,
+          backdropUrl: media.backdropUrl,
+          genres: media.genres,
+          universe,
+          studio: universe === 'Marvel Cinematic Universe' ? 'MARVEL STUDIOS' : universe === 'DC Universe' ? 'DC STUDIOS' : 'WORLD PREMIERE',
+          director: media.directors[0]?.name || 'Acclaimed Director',
+          cast: media.cast.slice(0, 4).map((c) => c.name),
+          trailerYoutubeId: media.trailerYoutubeId,
+          hypeCount: Math.floor((item.popularity || 50) * 1250) + 10000,
+          isConfirmedDate: true,
+          statusText: 'In Post-Production',
+        };
+
+        return upcoming;
+      });
+    }
+  } catch (err) {
+    console.warn('Failed to fetch upcoming releases from TMDB:', err);
+  }
+  return [];
+}
+
+
+export async function fetchMediaImages(id: string, type: MediaType = 'movie'): Promise<GalleryImages> {
+  try {
+    const res = await fetch(`/api/tmdb/images/${type}/${id}`);
+    if (!res.ok) throw new Error('Images API error');
+    const data = await res.json();
+
+    const backdrops: MediaImage[] = (data.backdrops || []).map((b: any) => ({
+      url: `https://image.tmdb.org/t/p/original${b.file_path}`,
+      width: b.width,
+      height: b.height,
+      aspectRatio: b.aspect_ratio,
+      voteAverage: b.vote_average,
+      type: 'backdrop' as const,
+    }));
+
+    const posters: MediaImage[] = (data.posters || []).map((p: any) => ({
+      url: `https://image.tmdb.org/t/p/w780${p.file_path}`,
+      width: p.width,
+      height: p.height,
+      aspectRatio: p.aspect_ratio,
+      voteAverage: p.vote_average,
+      type: 'poster' as const,
+    }));
+
+    const logos: MediaImage[] = (data.logos || []).map((l: any) => ({
+      url: `https://image.tmdb.org/t/p/w500${l.file_path}`,
+      width: l.width,
+      height: l.height,
+      type: 'logo' as const,
+    }));
+
+    return { backdrops, posters, logos: logos.length > 0 ? logos : undefined };
+  } catch (err) {
+    console.warn('Failed to fetch gallery images:', err);
+    return { backdrops: [], posters: [] };
+  }
 }
 
 export async function fetchPopularActors(page = 1): Promise<ActorItem[]> {
@@ -551,32 +723,7 @@ export async function fetchPopularActors(page = 1): Promise<ActorItem[]> {
       }));
     }
   } catch (err) {
-    console.warn('Actors fallback:', err);
+    console.warn('Actors API error:', err);
   }
-  return [
-    {
-      id: 'actor-1',
-      name: 'Timothée Chalamet',
-      profileUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&auto=format&fit=crop&q=80',
-      knownForDepartment: 'Acting',
-      popularity: 88.5,
-      knownFor: ['Dune: Part Two', 'Wonka', 'Call Me by Your Name'],
-    },
-    {
-      id: 'actor-2',
-      name: 'Zendaya',
-      profileUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
-      knownForDepartment: 'Acting',
-      popularity: 92.4,
-      knownFor: ['Dune', 'Euphoria', 'Challengers'],
-    },
-    {
-      id: 'actor-3',
-      name: 'Pedro Pascal',
-      profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
-      knownForDepartment: 'Acting',
-      popularity: 95.1,
-      knownFor: ['The Last of Us', 'The Mandalorian', 'Gladiator II'],
-    },
-  ];
+  return [];
 }
