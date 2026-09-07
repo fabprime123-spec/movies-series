@@ -39,30 +39,27 @@
   }
 }
 
-/* Custom Scrollbar - 100% Transparent track, no overlay, accent color thumb, no buttons (recreated from movieace) */
+/* -------------------------------------------------------------
+   LUMIÈRE Custom Scrollbar (Movieace Reference)
+   - 100% Transparent track with comfortable 10px breathing room
+   - Floating rounded accent thumb with transparent border padding
+   - Strictly zero stepper buttons/arrows
+------------------------------------------------------------- */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 10px !important;
+  height: 10px !important;
+  background: transparent !important;
 }
 
-::-webkit-scrollbar-button,
-::-webkit-scrollbar-button:single-button,
-::-webkit-scrollbar-button:vertical:decrement,
-::-webkit-scrollbar-button:vertical:increment,
-::-webkit-scrollbar-button:horizontal:decrement,
-::-webkit-scrollbar-button:horizontal:increment,
-::-webkit-scrollbar-button:start,
-::-webkit-scrollbar-button:end {
+::-webkit-scrollbar-button {
   display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  width: 0px !important;
+  height: 0px !important;
   background: transparent !important;
-  border: none !important;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent !important;
-  border: none !important;
 }
 
 ::-webkit-scrollbar-track-piece {
@@ -70,32 +67,38 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--accent-color, var(--accent-primary, #f97316));
-  border-radius: 9999px;
-  border: none;
-  transition: background-color 0.2s ease;
+  background-color: var(--accent-color, #f97316) !important;
+  border-radius: 9999px !important;
+  border: 2.5px solid transparent !important;
+  background-clip: padding-box !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-hover, #ea580c);
+  background-color: var(--accent-hover, #ea580c) !important;
 }
 
 ::-webkit-scrollbar-corner {
+  display: none !important;
   background: transparent !important;
+}
+
+/* Firefox fallback without enabling Chromium standard scrollbar buttons */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color, #f97316) transparent;
+  }
 }
 
 /* Utility to hide scrollbars for horizontal carousel strips */
 .scrollbar-none::-webkit-scrollbar {
   display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 .scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent-color, var(--accent-primary, #f97316)) transparent;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 .font-editorial {

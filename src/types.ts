@@ -1,5 +1,15 @@
 export type NavTab = 'home' | 'movies' | 'shows' | 'actors' | 'upcoming' | 'watchlist' | 'history';
 
+export interface MediaVideo {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  type: string; // 'Trailer' | 'Teaser' | 'Clip' | 'Behind the Scenes' | 'Featurette' | 'Bloopers'
+  official: boolean;
+  publishedAt?: string;
+}
+
 export interface MediaImage {
   url: string;
   width?: number;
@@ -168,8 +178,11 @@ export interface MediaItem {
   // Media & streaming
   trailerYoutubeId: string;
   trailerTitle?: string;
+  videos?: MediaVideo[];
   streamingProviders: StreamingProvider[];
   similarMediaIds: string[];
+  recommendations?: MediaItem[];
+  similar?: MediaItem[];
   featured?: boolean;
   trendingRank?: number;
   images?: GalleryImages;

@@ -1,4 +1,4 @@
-import { MediaItem, MediaType, CastMember, CrewMember, Season, Episode, LanguageTrack, SubtitleTrack, StreamingProvider, ActorItem, GalleryImages, MediaImage, UpcomingItem } from '../types';
+import { MediaItem, MediaType, CastMember, CrewMember, Season, Episode, LanguageTrack, SubtitleTrack, StreamingProvider, ActorItem, GalleryImages, MediaImage, UpcomingItem, MediaVideo } from '../types';
 
 const GENRE_MAP: Record<number, string> = {
   28: 'Action',
@@ -92,18 +92,40 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     ? `https://image.tmdb.org/t/p/original${tmdb.backdrop_path}`
     : posterPath;
 
-  // Extract Trailer Youtube ID
-  let trailerId = 'dQw4w9WgXcQ';
-  let trailerTitle = 'Official Trailer';
+  // Extract all videos (Trailers, Teasers, Clips, etc.)
+  const videos: MediaVideo[] = [];
   if (tmdb.videos?.results && Array.isArray(tmdb.videos.results)) {
-    const officialTrailer = tmdb.videos.results.find(
-      (v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser') && v.official
-    ) || tmdb.videos.results.find((v: any) => v.site === 'YouTube');
-    if (officialTrailer) {
-      trailerId = officialTrailer.key;
-      trailerTitle = officialTrailer.name;
-    }
+    tmdb.videos.results
+      .filter((v: any) => v.site === 'YouTube' && v.key)
+      .forEach((v: any) => {
+        videos.push({
+          id: String(v.id || v.key),
+          key: v.key,
+          name: v.name || 'Official Video',
+          site: v.site,
+          type: v.type || 'Trailer',
+          official: Boolean(v.official),
+          publishedAt: v.published_at || '',
+        });
+      });
+
+    // Sort: Official Trailers first, then Trailers, then Teasers, then others
+    videos.sort((a, b) => {
+      const rank = (item: MediaVideo) => {
+        if (item.type === 'Trailer' && item.official) return 0;
+        if (item.type === 'Trailer') return 1;
+        if (item.type === 'Teaser' && item.official) return 2;
+        if (item.type === 'Teaser') return 3;
+        if (item.type === 'Clip') return 4;
+        return 5;
+      };
+      return rank(a) - rank(b);
+    });
   }
+
+  // Extract Trailer Youtube ID (first trailer in sorted videos list)
+  let trailerId = videos.length > 0 ? videos[0].key : 'dQw4w9WgXcQ';
+  let trailerTitle = videos.length > 0 ? videos[0].name : 'Official Trailer';
 
   // Cast members
   const cast: CastMember[] = [];
@@ -409,6 +431,21 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
 
   const voteAverage = tmdb.vote_average ? Math.round(tmdb.vote_average * 10) / 10 : 7.6;
 
+  // Recommendations & Similar titles mapped to MediaItem
+  const recommendations: MediaItem[] = [];
+  if (tmdb.recommendations?.results && Array.isArray(tmdb.recommendations.results)) {
+    tmdb.recommendations.results.slice(0, 12).forEach((rec: any) => {
+      recommendations.push(transformTmdbToMediaItem(rec));
+    });
+  }
+
+  const similar: MediaItem[] = [];
+  if (tmdb.similar?.results && Array.isArray(tmdb.similar.results)) {
+    tmdb.similar.results.slice(0, 12).forEach((sim: any) => {
+      similar.push(transformTmdbToMediaItem(sim));
+    });
+  }
+
   return {
     id: String(tmdb.id),
     title,
@@ -448,10 +485,13 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     awards: ['Acclaimed TMDB Global Top Pick', 'Official Selection'],
     trailerYoutubeId: trailerId,
     trailerTitle,
+    videos: videos.length > 0 ? videos : undefined,
     streamingProviders,
     similarMediaIds: (tmdb.recommendations?.results || tmdb.similar?.results || [])
       .slice(0, 6)
       .map((item: any) => String(item.id)),
+    recommendations: recommendations.length > 0 ? recommendations : undefined,
+    similar: similar.length > 0 ? similar : undefined,
     images: galleryImages,
   };
 }
@@ -478,7 +518,8 @@ export async function fetchDiscoverMedia(
   sortBy: string = 'popularity.desc',
   dubbedLang?: string,
   minRating?: number,
-  year?: number
+  year?: number,
+  page: number = 1
 ): Promise<MediaItem[]> {
   try {
     const params = new URLSearchParams();
@@ -488,6 +529,7 @@ export async function fetchDiscoverMedia(
     if (dubbedLang) params.set('dubbedLanguage', dubbedLang);
     if (minRating) params.set('minRating', String(minRating));
     if (year) params.set('year', String(year));
+    if (page > 1) params.set('page', String(page));
 
     const res = await fetch(`/api/tmdb/discover?${params.toString()}`);
     if (!res.ok) throw new Error('Discover API error');
@@ -541,10 +583,13 @@ export async function fetchSeasonEpisodes(tvId: string, seasonNumber: number): P
   return [];
 }
 
-export async function searchTmdbFull(query: string): Promise<{ media: MediaItem[]; actors: ActorItem[] }> {
-  if (!query.trim()) return { media: [], actors: [] };
+export async function searchTmdbFull(
+  query: string,
+  page: number = 1
+): Promise<{ media: MediaItem[]; actors: ActorItem[]; totalPages: number; page: number }> {
+  if (!query.trim()) return { media: [], actors: [], totalPages: 0, page: 1 };
   try {
-    const res = await fetch(`/api/tmdb/search?query=${encodeURIComponent(query)}`);
+    const res = await fetch(`/api/tmdb/search?query=${encodeURIComponent(query)}&page=${page}`);
     if (!res.ok) throw new Error('Search API error');
     const data = await res.json();
     if (data.results && Array.isArray(data.results)) {
@@ -568,12 +613,87 @@ export async function searchTmdbFull(query: string): Promise<{ media: MediaItem[
             : [],
         }));
 
-      return { media, actors };
+      return {
+        media,
+        actors,
+        totalPages: data.total_pages || 1,
+        page: data.page || page,
+      };
     }
   } catch (err) {
     console.warn('Search API error:', err);
   }
-  return { media: [], actors: [] };
+  return { media: [], actors: [], totalPages: 0, page: 1 };
+}
+
+export async function fetchActorDetails(id: string): Promise<ActorItem> {
+  try {
+    const res = await fetch(`/api/tmdb/actor/${id}`);
+    if (!res.ok) throw new Error('Actor details API error');
+    const data = await res.json();
+
+    const filmography: MediaItem[] = [];
+    const credits = data.combined_credits?.cast || [];
+    const crewCredits = data.combined_credits?.crew || [];
+    const allCredits = [...credits, ...crewCredits];
+
+    // Deduplicate by media ID
+    const seen = new Set<string>();
+    allCredits
+      .filter((c: any) => (c.poster_path || c.backdrop_path) && (c.title || c.name))
+      .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+      .forEach((c: any) => {
+        const key = `${c.media_type || 'movie'}-${c.id}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          filmography.push(transformTmdbToMediaItem(c, c.media_type));
+        }
+      });
+
+    return {
+      id: String(data.id),
+      name: data.name,
+      originalName: data.also_known_as?.[0] || data.name,
+      profileUrl: data.profile_path
+        ? `https://image.tmdb.org/t/p/h632${data.profile_path}`
+        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
+      knownForDepartment: data.known_for_department || 'Acting',
+      popularity: data.popularity || 0,
+      knownFor: filmography.slice(0, 5).map((f) => f.title),
+      biography: data.biography || 'No biography available for this talent.',
+      birthday: data.birthday || '',
+      placeOfBirth: data.place_of_birth || '',
+      filmography,
+    };
+  } catch (err) {
+    console.warn('Failed to fetch actor details:', err);
+    throw err;
+  }
+}
+
+export async function searchActors(query: string, page: number = 1): Promise<{ actors: ActorItem[]; totalPages: number }> {
+  try {
+    const res = await fetch(`/api/tmdb/search/person?query=${encodeURIComponent(query)}&page=${page}`);
+    if (!res.ok) throw new Error('Search actors API error');
+    const data = await res.json();
+    if (data.results && Array.isArray(data.results)) {
+      const actors = data.results.map((p: any) => ({
+        id: String(p.id),
+        name: p.name,
+        originalName: p.original_name,
+        profileUrl: p.profile_path
+          ? `https://image.tmdb.org/t/p/h632${p.profile_path}`
+          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
+        knownForDepartment: p.known_for_department || 'Acting',
+        popularity: p.popularity || 0,
+        knownFor: (p.known_for || []).map((k: any) => k.title || k.name || ''),
+      }));
+      return { actors, totalPages: data.total_pages || 1 };
+    }
+  } catch (err) {
+    console.warn('Search actors error:', err);
+  }
+  return { actors: [], totalPages: 0 };
 }
 
 
@@ -598,21 +718,24 @@ export async function fetchUpcomingMedia(page = 1, type: 'all' | 'movie' | 'tv' 
 
 export async function fetchUpcomingReleases(): Promise<UpcomingItem[]> {
   try {
-    const res = await fetch('/api/tmdb/upcoming?page=1&type=all');
-    if (!res.ok) throw new Error('Upcoming releases API error');
+    let res = await fetch('/api/tmdb/upcoming?page=1&type=all');
+    if (!res.ok) {
+      res = await fetch('/api/tmdb/discover?type=movie&sortBy=popularity.desc');
+    }
     const data = await res.json();
-    if (data.results && Array.isArray(data.results)) {
-      return data.results.map((item: any) => {
+    const rawList = (data.results && Array.isArray(data.results) && data.results.length > 0)
+      ? data.results
+      : [];
+
+    if (rawList.length > 0) {
+      return rawList.map((item: any, index: number) => {
         const media = transformTmdbToMediaItem(item);
         const releaseDateStr = item.release_date || item.first_air_date || '';
-        let targetTimestamp = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        let targetTimestamp = Date.now() + (index + 2) * 7 * 24 * 60 * 60 * 1000;
         if (releaseDateStr) {
           const parsed = new Date(releaseDateStr).getTime();
           if (!isNaN(parsed) && parsed > Date.now()) {
             targetTimestamp = parsed;
-          } else {
-            // Future simulated premiere
-            targetTimestamp = Date.now() + (Math.abs(item.id % 90) + 15) * 24 * 60 * 60 * 1000;
           }
         }
 

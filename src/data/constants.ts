@@ -2,6 +2,7 @@ export const GENRES_LIST = [
   'Action',
   'Adventure',
   'Animation',
+  'Anime',
   'Comedy',
   'Crime',
   'Documentary',

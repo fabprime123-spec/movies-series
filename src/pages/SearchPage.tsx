@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, Filter, X, Sparkles, Star, Film, Tv, Users, SlidersHorizontal, ArrowUpDown, Volume2, Globe, Check, RotateCcw } from 'lucide-react';
+import { Search, Filter, X, Sparkles, Star, Film, Tv, Users, SlidersHorizontal, ArrowUpDown, Volume2, Globe, Check, RotateCcw, Loader2 } from 'lucide-react';
 import { MediaCard } from '../components/MediaCard';
 import { MediaGridSkeleton, ActorCardSkeleton } from '../components/Skeletons';
 import { MediaItem, ActorItem } from '../types';
@@ -41,6 +41,10 @@ export const SearchPage: React.FC = () => {
   const [mediaResults, setMediaResults] = useState<MediaItem[]>([]);
   const [actorResults, setActorResults] = useState<ActorItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
 
   // Sync URL search params
   useEffect(() => {
@@ -50,25 +54,30 @@ export const SearchPage: React.FC = () => {
     setSearchParams(params, { replace: true });
   }, [query, typeFilter, setSearchParams]);
 
-  // Execute TMDB Search or Discovery
+  // Execute initial TMDB Search or Discovery on filter / query change
   useEffect(() => {
     let isMounted = true;
     const fetchResults = async () => {
       setLoading(true);
+      setPage(1);
       try {
         if (query.trim()) {
-          const { media, actors } = await searchTmdbFull(query.trim());
+          const res = await searchTmdbFull(query.trim(), 1);
           if (isMounted) {
-            setMediaResults(media);
-            setActorResults(actors);
+            setMediaResults(res.media);
+            setActorResults(res.actors);
+            setTotalPages(res.totalPages);
+            setHasMore(res.totalPages > 1);
           }
         } else {
           // If query is empty, show top discover titles matching active category
           const mediaType = typeFilter === 'actors' ? 'all' : typeFilter;
-          const data = await fetchDiscoverMedia(mediaType, selectedGenre === 'All Genres' ? '' : selectedGenre);
+          const data = await fetchDiscoverMedia(mediaType, selectedGenre === 'All Genres' ? '' : selectedGenre, sortBy === 'rating' ? 'vote_average.desc' : 'popularity.desc', selectedLanguage === 'all' ? undefined : selectedLanguage, minRating, selectedYear === 'all' ? undefined : parseInt(selectedYear) || undefined, 1);
           if (isMounted) {
             setMediaResults(data || []);
             setActorResults([]);
+            setTotalPages(10);
+            setHasMore(true);
           }
         }
       } catch (err) {
@@ -83,7 +92,77 @@ export const SearchPage: React.FC = () => {
       isMounted = false;
       clearTimeout(debounceTimer);
     };
-  }, [query, typeFilter, selectedGenre]);
+  }, [query, typeFilter, selectedGenre, sortBy, selectedLanguage, minRating, selectedYear]);
+
+  // Load next page function
+  const loadNextPage = async () => {
+    if (loading || loadingMore || !hasMore) return;
+    const nextPage = page + 1;
+    setLoadingMore(true);
+
+    try {
+      if (query.trim()) {
+        const res = await searchTmdbFull(query.trim(), nextPage);
+        setPage(nextPage);
+        setTotalPages(res.totalPages);
+        setHasMore(nextPage < res.totalPages);
+
+        // Deduplicate & append
+        setMediaResults((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const fresh = res.media.filter((m) => !existingIds.has(m.id));
+          return [...prev, ...fresh];
+        });
+
+        setActorResults((prev) => {
+          const existingIds = new Set(prev.map((a) => a.id));
+          const fresh = res.actors.filter((a) => !existingIds.has(a.id));
+          return [...prev, ...fresh];
+        });
+      } else {
+        const mediaType = typeFilter === 'actors' ? 'all' : typeFilter;
+        const data = await fetchDiscoverMedia(
+          mediaType,
+          selectedGenre === 'All Genres' ? '' : selectedGenre,
+          sortBy === 'rating' ? 'vote_average.desc' : 'popularity.desc',
+          selectedLanguage === 'all' ? undefined : selectedLanguage,
+          minRating,
+          selectedYear === 'all' ? undefined : parseInt(selectedYear) || undefined,
+          nextPage
+        );
+
+        setPage(nextPage);
+        setHasMore(data.length > 0 && nextPage < 15);
+
+        setMediaResults((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const fresh = data.filter((m) => !existingIds.has(m.id));
+          return [...prev, ...fresh];
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to load next search page:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // IntersectionObserver for infinite scroll bottom trigger
+  const observerRef = React.useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!observerRef.current || loading || loadingMore || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: '250px' }
+    );
+
+    observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [loading, loadingMore, hasMore, page, query, typeFilter]);
 
   // Client-side filtering & sorting
   const filteredMedia = useMemo(() => {
@@ -99,7 +178,7 @@ export const SearchPage: React.FC = () => {
       }
 
       // Min Rating
-      if (minRating > 0 && item.ratings.imdb < minRating) {
+      if (minRating > 0 && (item.ratings?.imdb ?? 0) < minRating) {
         return false;
       }
 
@@ -125,7 +204,7 @@ export const SearchPage: React.FC = () => {
 
       return true;
     }).sort((a, b) => {
-      if (sortBy === 'rating') return b.ratings.imdb - a.ratings.imdb;
+      if (sortBy === 'rating') return (b.ratings?.imdb ?? 0) - (a.ratings?.imdb ?? 0);
       if (sortBy === 'newest') return b.releaseYear - a.releaseYear;
       if (sortBy === 'title') return a.title.localeCompare(b.title);
       return (b.ratings.communityVotesCount || 0) - (a.ratings.communityVotesCount || 0);
@@ -367,7 +446,52 @@ export const SearchPage: React.FC = () => {
           </strong>{' '}
           results {query ? `for "${query}"` : ''}
         </span>
+        {hasMore && (
+          <span className="text-[11px] text-orange-400 font-medium hidden sm:inline">
+            Scroll down to load more titles
+          </span>
+        )}
       </div>
+
+      {/* When searching in 'all' view and actors match (e.g. "robert"), show Actors & Talent section */}
+      {typeFilter === 'all' && query.trim() && actorResults.length > 0 && !loading && (
+        <div className="space-y-3 p-4 rounded-2xl bg-[#141622]/60 border border-white/10 backdrop-blur-xl">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Users className="w-4 h-4 text-orange-400" />
+              <span>Matching Talent & Cast ({actorResults.length})</span>
+            </h3>
+            <button
+              onClick={() => setTypeFilter('actors')}
+              className="text-xs text-orange-400 hover:text-orange-300 font-medium transition-colors"
+            >
+              View all talent →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {actorResults.slice(0, 6).map((actor) => (
+              <button
+                key={actor.id}
+                onClick={() => navigate(`/actors/${actor.id}`)}
+                className="group relative flex flex-col text-left overflow-hidden rounded-xl border border-white/10 bg-black/40 p-2.5 hover:border-orange-500/50 hover:bg-[#181a2b] transition-all cursor-pointer"
+              >
+                <div className="aspect-square w-full rounded-lg overflow-hidden bg-black/50 mb-2">
+                  <img
+                    src={actor.profileUrl}
+                    alt={actor.name}
+                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <h4 className="font-semibold text-xs text-white group-hover:text-orange-400 transition-colors line-clamp-1">
+                  {actor.name}
+                </h4>
+                <p className="text-[10px] text-white/40 line-clamp-1">{actor.knownForDepartment}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Results Rendering */}
       {loading ? (
@@ -385,10 +509,11 @@ export const SearchPage: React.FC = () => {
         actorResults.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {actorResults.map((actor) => (
-              <div
+              <button
                 key={actor.id}
-                onClick={() => navigate('/actors')}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#14161f]/70 backdrop-blur-xl p-3 shadow-lg hover:border-orange-500/40 hover:shadow-orange-500/10 cursor-pointer transition-all"
+                onClick={() => navigate(`/actors/${actor.id}`)}
+                className="group relative flex flex-col text-left overflow-hidden rounded-2xl border border-white/10 bg-[#14161f]/70 backdrop-blur-xl p-3 shadow-lg hover:border-orange-500/50 hover:bg-[#181a2b] cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                title={`View ${actor.name}'s profile & filmography`}
               >
                 <div className="aspect-square w-full rounded-xl overflow-hidden bg-black/40 mb-3">
                   <img
@@ -397,7 +522,7 @@ export const SearchPage: React.FC = () => {
                     className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h3 className="font-semibold text-sm text-white group-hover:text-orange-400 transition-colors">
+                <h3 className="font-semibold text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1">
                   {actor.name}
                 </h3>
                 <p className="text-xs text-white/50">{actor.knownForDepartment}</p>
@@ -406,7 +531,7 @@ export const SearchPage: React.FC = () => {
                     {actor.knownFor.join(', ')}
                   </p>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         ) : (
@@ -414,15 +539,38 @@ export const SearchPage: React.FC = () => {
             <Users className="w-12 h-12 text-white/20" />
             <h3 className="text-lg font-bold text-white">No talent found matching your search</h3>
             <p className="text-xs text-white/40 max-w-sm">
-              Try searching with popular names like "Pedro Pascal", "Timothée Chalamet", or "Zendaya".
+              Try searching with popular names like "Robert Downey Jr.", "Pedro Pascal", "Zendaya", or "Cillian Murphy".
             </p>
           </div>
         )
       ) : filteredMedia.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-          {filteredMedia.map((item) => (
-            <MediaCard key={item.id} item={item} />
-          ))}
+        <div className="space-y-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+            {filteredMedia.map((item) => (
+              <MediaCard key={item.id} media={item} />
+            ))}
+          </div>
+
+          {/* Infinite Scroll Bottom Sentinel / Loader / Manual Button */}
+          <div ref={observerRef} className="py-8 flex flex-col items-center justify-center space-y-3">
+            {loadingMore ? (
+              <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs text-orange-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading more titles from TMDB catalogue...</span>
+              </div>
+            ) : hasMore ? (
+              <button
+                onClick={loadNextPage}
+                className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-semibold transition-all hover:border-orange-500/40"
+              >
+                Load Next Page ({page + 1})
+              </button>
+            ) : (
+              <p className="text-xs text-white/30">
+                You've reached the end of the results.
+              </p>
+            )}
+          </div>
         </div>
       ) : (
         /* Empty State */

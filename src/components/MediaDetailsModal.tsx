@@ -266,7 +266,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
           <div className="flex flex-wrap items-center gap-2.5 pt-1">
             <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-1 text-xs font-bold text-white">
               <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
-              <span>{item.ratings.imdb.toFixed(1)}</span>
+              <span>{(item.ratings?.imdb ?? 0).toFixed(1)}</span>
             </div>
 
             {item.genres.slice(0, 3).map((genre) => (
@@ -433,7 +433,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                     <span className="text-xs text-white/70">TMDB User Rating</span>
                     <div className="flex items-center gap-1 text-sm font-bold text-amber-400">
                       <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      <span>{item.ratings.community.toFixed(1)} / 10</span>
+                      <span>{(item.ratings?.community ?? 0).toFixed(1)} / 10</span>
                     </div>
                   </div>
 
@@ -526,7 +526,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                           </h4>
                           <span className="flex items-center gap-1 text-xs text-amber-400 font-bold">
                             <Star className="h-3 w-3 fill-amber-400" />
-                            {ep.voteAverage.toFixed(1)}
+                            {(ep.voteAverage ?? 8.0).toFixed(1)}
                           </span>
                         </div>
                         <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">

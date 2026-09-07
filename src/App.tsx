@@ -50,6 +50,7 @@ function AppContent() {
           <Route path="/shows" element={<ShowsPage />} />
           <Route path="/upcoming" element={<UpcomingPage />} />
           <Route path="/actors" element={<ActorsPage />} />
+          <Route path="/actors/:id" element={<ActorsPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/watchlist" element={<LibraryPage />} />
           <Route path="/history" element={<LibraryPage />} />

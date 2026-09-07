@@ -53,6 +53,38 @@ async function fetchFromTmdb(endpoint: string, queryParams: Record<string, strin
   return data;
 }
 
+// Genre name to TMDB ID mapping for both Movies and TV Shows
+const GENRE_MAP: Record<string, { movie: string; tv: string }> = {
+  Action: { movie: "28", tv: "10759" },
+  Adventure: { movie: "12", tv: "10759" },
+  Animation: { movie: "16", tv: "16" },
+  Anime: { movie: "16", tv: "16" },
+  Comedy: { movie: "35", tv: "35" },
+  Crime: { movie: "80", tv: "80" },
+  Documentary: { movie: "99", tv: "99" },
+  Drama: { movie: "18", tv: "18" },
+  Family: { movie: "10751", tv: "10751" },
+  Fantasy: { movie: "14", tv: "10765" },
+  History: { movie: "36", tv: "36" },
+  Horror: { movie: "27", tv: "27" },
+  Music: { movie: "10402", tv: "10402" },
+  Mystery: { movie: "9648", tv: "9648" },
+  Romance: { movie: "10749", tv: "10749" },
+  "Sci-Fi": { movie: "878", tv: "10765" },
+  Thriller: { movie: "53", tv: "53" },
+  War: { movie: "10752", tv: "10768" },
+  Western: { movie: "37", tv: "37" },
+};
+
+function resolveGenreId(genre: string, mediaType: "movie" | "tv"): string {
+  if (!genre || genre === "All Genres") return "";
+  if (/^\d+$/.test(genre)) return genre;
+  const mapped = GENRE_MAP[genre] || Object.entries(GENRE_MAP).find(
+    ([k]) => k.toLowerCase() === genre.toLowerCase()
+  )?.[1];
+  return mapped ? mapped[mediaType] : genre;
+}
+
 // ---------------- TMDB API ROUTES ----------------
 
 // 1. Trending (all, movies, shows, anime)
@@ -90,45 +122,83 @@ app.get("/api/tmdb/discover", async (req, res) => {
     if (minRating) {
       queryParams["vote_average.gte"] = minRating;
     }
-    if (genre) {
-      queryParams["with_genres"] = genre;
-    }
     if (dubbedLanguage) {
       queryParams["with_original_language"] = dubbedLanguage;
     }
 
-    if (type === "anime") {
+    const isAnimeGenre = genre.toLowerCase() === "anime";
+
+    if (type === "anime" || isAnimeGenre) {
       // Animation genre = 16, Japanese language = ja
-      const animeTvParams = {
+      const animeParams: Record<string, string> = {
         ...queryParams,
-        with_genres: genre ? `${genre},16` : "16",
+        with_genres: "16",
         with_original_language: dubbedLanguage || "ja",
       };
-      const data = await fetchFromTmdb("/discover/tv", animeTvParams);
-      return res.json(data);
+
+      if (type === "movie") {
+        const data = await fetchFromTmdb("/discover/movie", animeParams);
+        return res.json(data);
+      }
+
+      if (type === "tv" || type === "anime") {
+        const data = await fetchFromTmdb("/discover/tv", animeParams);
+        return res.json(data);
+      }
+
+      // If type === "all" and anime is selected: combine anime movies & anime series
+      const [animeMovies, animeTv] = await Promise.all([
+        fetchFromTmdb("/discover/movie", animeParams),
+        fetchFromTmdb("/discover/tv", animeParams),
+      ]);
+      const combined = [...(animeMovies.results || []), ...(animeTv.results || [])].sort(
+        (a, b) => (b.popularity || 0) - (a.popularity || 0)
+      );
+      return res.json({ results: combined, page: Number(page), total_pages: 10 });
     }
 
     if (type === "tv") {
+      const genreId = resolveGenreId(genre, "tv");
+      if (genreId) {
+        queryParams["with_genres"] = genreId;
+      }
       const data = await fetchFromTmdb("/discover/tv", queryParams);
       return res.json(data);
     }
 
     if (type === "movie") {
+      const genreId = resolveGenreId(genre, "movie");
+      if (genreId) {
+        queryParams["with_genres"] = genreId;
+      }
       const data = await fetchFromTmdb("/discover/movie", queryParams);
       return res.json(data);
     }
 
-    // Default 'all': combine popular movies & tv
+    // Default 'all': combine popular movies & tv with genre if specified
+    if (genre) {
+      const movieGenreId = resolveGenreId(genre, "movie");
+      const tvGenreId = resolveGenreId(genre, "tv");
+      const [movies, tv] = await Promise.all([
+        fetchFromTmdb("/discover/movie", { ...queryParams, with_genres: movieGenreId }),
+        fetchFromTmdb("/discover/tv", { ...queryParams, with_genres: tvGenreId }),
+      ]);
+      const combined = [...(movies.results || []), ...(tv.results || [])].sort(
+        (a, b) => (b.popularity || 0) - (a.popularity || 0)
+      );
+      return res.json({ results: combined, page: Number(page), total_pages: 10 });
+    }
+
     const [movies, tv] = await Promise.all([
-      fetchFromTmdb("/trending/movie/week"),
-      fetchFromTmdb("/trending/tv/week"),
+      fetchFromTmdb("/trending/movie/week", { page }),
+      fetchFromTmdb("/trending/tv/week", { page }),
     ]);
 
     const combined = [...(movies.results || []), ...(tv.results || [])].sort(
       (a, b) => (b.popularity || 0) - (a.popularity || 0)
     );
 
-    res.json({ results: combined, page: 1, total_pages: 10 });
+    res.json({ results: combined, page: Number(page), total_pages: 10 });
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to discover media" });
   }
@@ -209,6 +279,26 @@ app.get("/api/tmdb/actors", async (req, res) => {
   }
 });
 
+// 6b. Search Actors / Persons
+app.get("/api/tmdb/search/person", async (req, res) => {
+  try {
+    const query = (req.query.query as string) || "";
+    const page = (req.query.page as string) || "1";
+    if (!query.trim()) {
+      const popular = await fetchFromTmdb("/person/popular", { page });
+      return res.json(popular);
+    }
+    const data = await fetchFromTmdb("/search/person", {
+      query,
+      page,
+      include_adult: "false",
+    });
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to search actors" });
+  }
+});
+
 // 7. Actor Details & Credits
 app.get("/api/tmdb/actor/:id", async (req, res) => {
   try {
@@ -229,22 +319,41 @@ app.get("/api/tmdb/upcoming", async (req, res) => {
     const type = (req.query.type as string) || "all";
 
     if (type === "movie") {
-      const data = await fetchFromTmdb("/movie/upcoming", { page });
-      return res.json(data);
+      try {
+        const data = await fetchFromTmdb("/movie/upcoming", { page });
+        return res.json(data);
+      } catch {
+        const data = await fetchFromTmdb("/discover/movie", { page, sort_by: "popularity.desc" });
+        return res.json(data);
+      }
     }
 
     if (type === "tv") {
-      const data = await fetchFromTmdb("/tv/on_the_air", { page });
-      return res.json(data);
+      try {
+        const data = await fetchFromTmdb("/tv/on_the_air", { page });
+        return res.json(data);
+      } catch {
+        const data = await fetchFromTmdb("/discover/tv", { page, sort_by: "popularity.desc" });
+        return res.json(data);
+      }
     }
 
-    // Combine upcoming movies & on_the_air tv
-    const [movies, tv] = await Promise.all([
+    // Combine upcoming movies & on_the_air tv safely
+    const [moviesResult, tvResult] = await Promise.allSettled([
       fetchFromTmdb("/movie/upcoming", { page }),
       fetchFromTmdb("/tv/on_the_air", { page }),
     ]);
 
-    const combined = [...(movies.results || []), ...(tv.results || [])];
+    const movies = moviesResult.status === "fulfilled" ? moviesResult.value : { results: [] };
+    const tv = tvResult.status === "fulfilled" ? tvResult.value : { results: [] };
+
+    let combined = [...(movies.results || []), ...(tv.results || [])];
+    if (combined.length === 0) {
+      // Fallback to trending
+      const trending = await fetchFromTmdb("/trending/all/week", { page });
+      combined = trending.results || [];
+    }
+
     res.json({ results: combined, page: Number(page), total_pages: 10 });
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to fetch upcoming media" });

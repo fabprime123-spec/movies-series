@@ -37,6 +37,7 @@ import { MediaImageGallery } from '../components/MediaImageGallery';
 import { fetchMediaDetails, fetchSeasonEpisodes } from '../services/tmdb';
 import { MediaDetailsSkeleton } from '../components/Skeletons';
 import { MediaCard } from '../components/MediaCard';
+import { AllTrailersModal } from '../components/AllTrailersModal';
 import { motion, AnimatePresence } from 'motion/react';
 
 type DetailTab = 'overview' | 'gallery' | 'episodes' | 'cast' | 'languages' | 'providers' | 'journal' | 'similar';
@@ -56,6 +57,8 @@ export const DetailsPage: React.FC = () => {
   const [loadingEpisodes, setLoadingEpisodes] = useState<boolean>(false);
   const [languageSearch, setLanguageSearch] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [isAllTrailersOpen, setIsAllTrailersOpen] = useState<boolean>(false);
+  const [allTrailersInitialKey, setAllTrailersInitialKey] = useState<string | undefined>(undefined);
 
   const { 
     isInWatchlist, 
@@ -200,7 +203,7 @@ export const DetailsPage: React.FC = () => {
           <FilmGrainOverlay opacity={1} />
           
           {/* Smooth bottom fade to page background */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/40 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
           
           {/* Circular Mobile Navigation Controls */}
           <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between">
@@ -268,7 +271,7 @@ export const DetailsPage: React.FC = () => {
             <span>•</span>
             <span className="flex items-center gap-1 text-amber-400 font-bold">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              {item.ratings.imdb.toFixed(1)}
+              {(item.ratings?.imdb ?? 0).toFixed(1)}
             </span>
           </div>
 
@@ -314,15 +317,28 @@ export const DetailsPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Play Trailer Button if trailer exists */}
+          {/* Mobile Trailer Buttons */}
           {item.trailerYoutubeId && (
-            <button
-              onClick={handleTrailerClick}
-              className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} text-white font-bold text-xs shadow-lg active:scale-95 transition-all mt-1`}
-            >
-              <Play className="w-4 h-4 fill-white" />
-              <span>Play Official Trailer</span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={handleTrailerClick}
+                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} text-white font-bold text-xs shadow-lg active:scale-95 transition-all`}
+              >
+                <Play className="w-4 h-4 fill-white" />
+                <span>Play Official Trailer</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setAllTrailersInitialKey(undefined);
+                  setIsAllTrailersOpen(true);
+                }}
+                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 shadow-md active:scale-95 transition-all"
+              >
+                <Film className="w-4 h-4 text-orange-400" />
+                <span>All Trailers & Clips ({item.videos?.length || 1})</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -430,7 +446,7 @@ export const DetailsPage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-start gap-3 pt-1">
                 <div className="flex items-center gap-1.5 rounded-xl bg-black/60 border border-amber-400/30 px-3 py-1 text-xs font-bold text-amber-400 backdrop-blur-md shadow-sm">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span>IMDb {item.ratings.imdb.toFixed(1)}</span>
+                  <span>IMDb {(item.ratings?.imdb ?? 0).toFixed(1)}</span>
                 </div>
 
                 {item.ratings.rottenTomatoes > 0 && (
@@ -461,13 +477,27 @@ export const DetailsPage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-start gap-3 pt-2">
                 {/* Trailer / Play Button */}
                 {item.trailerYoutubeId ? (
-                  <button
-                    onClick={handleTrailerClick}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-xl shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all"
-                  >
-                    <Play className="h-4 w-4 fill-white" />
-                    <span>Play Official Trailer</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={handleTrailerClick}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-xl shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <Play className="h-4 w-4 fill-white" />
+                      <span>Play Trailer</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setAllTrailersInitialKey(undefined);
+                        setIsAllTrailersOpen(true);
+                      }}
+                      className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/90 hover:bg-white/10 hover:text-white transition-all shadow-sm"
+                      title="Browse all official trailers, teasers, and clips"
+                    >
+                      <Film className="h-4 w-4 text-orange-400" />
+                      <span>All Trailers ({item.videos?.length || 1})</span>
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => setActiveTab('episodes')}
@@ -648,13 +678,13 @@ export const DetailsPage: React.FC = () => {
                     {item.budget && (
                       <div>
                         <p className="text-white/40">Budget</p>
-                        <p className="font-semibold text-white mt-0.5">${(item.budget / 1000000).toFixed(1)}M</p>
+                        <p className="font-semibold text-white mt-0.5">${Number((item.budget / 1000000).toFixed(1))}M</p>
                       </div>
                     )}
                     {item.revenue && (
                       <div>
                         <p className="text-white/40">Worldwide Box Office</p>
-                        <p className="font-semibold text-emerald-400 mt-0.5">${(item.revenue / 1000000).toFixed(1)}M</p>
+                        <p className="font-semibold text-emerald-400 mt-0.5">${Number((item.revenue / 1000000).toFixed(1))}M</p>
                       </div>
                     )}
                   </div>
@@ -812,9 +842,11 @@ export const DetailsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {item.cast.map((actor) => (
-                <div
+                <button
                   key={actor.id}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#141622]/70 p-3 backdrop-blur-xl shadow-lg hover:border-orange-500/40 transition-all"
+                  onClick={() => navigate(`/actors/${actor.id}`)}
+                  className="group relative flex flex-col text-left overflow-hidden rounded-2xl border border-white/10 bg-[#141622]/70 p-3 backdrop-blur-xl shadow-lg hover:border-orange-500/50 hover:bg-[#181a2b] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  title={`View ${actor.name}'s profile and filmography`}
                 >
                   <div className="aspect-square w-full rounded-xl overflow-hidden bg-black/40 mb-2.5">
                     <img
@@ -823,13 +855,13 @@ export const DetailsPage: React.FC = () => {
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors">
+                  <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1">
                     {actor.name}
                   </h4>
                   <p className="text-[11px] text-orange-400/90 line-clamp-1 mt-0.5">
                     {actor.character}
                   </p>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -1012,7 +1044,68 @@ export const DetailsPage: React.FC = () => {
           </div>
         )}
 
+        {/* ========================================================================= */}
+        {/* Recommendation & Similar Rows (Always presented for rich discovery)      */}
+        {/* ========================================================================= */}
+        {((item.recommendations && item.recommendations.length > 0) || (item.similar && item.similar.length > 0)) && (
+          <div className="space-y-10 pt-10 border-t border-white/10">
+            {/* 1. Recommended For You */}
+            {item.recommendations && item.recommendations.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-white">Recommended For You</h3>
+                      <p className="text-xs text-white/50">Curated by TMDB intelligence matching {item.title}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+                  {item.recommendations.slice(0, 12).map((rec) => (
+                    <MediaCard key={`rec-${rec.id}`} media={rec} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 2. Similar Titles */}
+            {item.similar && item.similar.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
+                      <Film className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-white">Similar Titles & Franchise</h3>
+                      <p className="text-xs text-white/50">Sharing genre themes, directors, and cinematic tone</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+                  {item.similar.slice(0, 12).map((sim) => (
+                    <MediaCard key={`sim-${sim.id}`} media={sim} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
+
+      {/* All Trailers & Cinematic Videos Modal */}
+      <AllTrailersModal
+        isOpen={isAllTrailersOpen}
+        onClose={() => setIsAllTrailersOpen(false)}
+        media={item}
+        initialVideoKey={allTrailersInitialKey}
+      />
     </div>
   );
 };

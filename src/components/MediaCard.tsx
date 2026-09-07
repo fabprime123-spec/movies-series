@@ -13,15 +13,19 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
 interface MediaCardProps {
-  item: MediaItem;
+  item?: MediaItem;
+  media?: MediaItem;
   onOpenDetails?: (item: MediaItem) => void;
   onPlayTrailer?: (youtubeId: string, title: string) => void;
 }
 
-export const MediaCard: React.FC<MediaCardProps> = ({ item, onOpenDetails, onPlayTrailer }) => {
+export const MediaCard: React.FC<MediaCardProps> = ({ item: itemProp, media, onOpenDetails, onPlayTrailer }) => {
+  const item = itemProp || media;
   const { isInWatchlist, isFavorite, addToWatchlist, removeFromWatchlist, toggleFavorite } = useWatchlist();
   const { playTrailer } = useTrailer();
   const navigate = useNavigate();
+
+  if (!item) return null;
 
   const inWatchlist = isInWatchlist(item.id);
   const favorite = isFavorite(item.id);
@@ -85,7 +89,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item, onOpenDetails, onPla
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 z-10">
           <span className="flex items-center gap-1 rounded-lg bg-black/70 px-2 py-0.5 text-[11px] font-bold text-amber-400 backdrop-blur-md border border-amber-400/20 shadow-sm">
             <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-            {item.ratings.imdb.toFixed(1)}
+            {(item.ratings?.imdb ?? 0).toFixed(1)}
           </span>
 
           <div className="flex items-center gap-1">

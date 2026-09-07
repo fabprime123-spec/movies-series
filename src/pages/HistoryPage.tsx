@@ -296,7 +296,7 @@ export const HistoryPage: React.FC = () => {
                             </span>
                             <span className="flex items-center gap-1 font-bold text-amber-500 dark:text-amber-400">
                               <Star className="w-3 h-3 fill-current" />
-                              {media.ratings.imdb.toFixed(1)}
+                              {(media.ratings?.imdb ?? 0).toFixed(1)}
                             </span>
                           </div>
 

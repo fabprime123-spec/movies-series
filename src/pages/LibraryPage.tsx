@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Bookmark,
@@ -10,7 +10,6 @@ import {
   Tv,
   Star,
   Search,
-  CheckCircle2,
   Clock,
   Eye,
   ArrowRight,
@@ -31,8 +30,20 @@ export const LibraryPage: React.FC = () => {
   const { playTrailer } = useTrailer();
   const { accentConfig } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [activeMainTab, setActiveMainTab] = useState<'watchlist' | 'history'>('watchlist');
+  const [activeMainTab, setActiveMainTab] = useState<'watchlist' | 'history'>(() => {
+    return location.pathname === '/history' ? 'history' : 'watchlist';
+  });
+
+  useEffect(() => {
+    if (location.pathname === '/history') {
+      setActiveMainTab('history');
+    } else if (location.pathname === '/watchlist') {
+      setActiveMainTab('watchlist');
+    }
+  }, [location.pathname]);
+
   const [selectedStatus, setSelectedStatus] = useState<WatchlistStatus | 'all'>('all');
   const [filterType, setFilterType] = useState<MediaType | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -311,7 +322,7 @@ export const LibraryPage: React.FC = () => {
                           <span>{item.media.releaseYear}</span>
                           <span className="flex items-center gap-1 text-amber-400 font-bold">
                             <Star className="w-3 h-3 fill-amber-400" />
-                            {item.media.rating.toFixed(1)}
+                            {(item.media?.ratings?.imdb ?? (item.media as any)?.rating ?? 0).toFixed(1)}
                           </span>
                         </div>
                       </div>

@@ -82,9 +82,11 @@ export const UpcomingPage: React.FC = () => {
       try {
         setLoading(true);
         const data = await fetchUpcomingReleases();
-        if (isMounted && data.length > 0) {
-          setReleases(data);
-          setFeaturedItem(data[0]);
+        if (isMounted) {
+          if (data && data.length > 0) {
+            setReleases(data);
+            setFeaturedItem(data[0]);
+          }
         }
       } catch (err) {
         console.warn('Failed to load upcoming releases:', err);
@@ -132,12 +134,32 @@ export const UpcomingPage: React.FC = () => {
 
   const universes = ['all', 'Marvel Cinematic Universe', 'DC Universe', 'Sci-Fi', 'Anime', 'Original'];
 
-  if (loading || !featuredItem) {
+  if (loading) {
     return (
       <div className="min-h-screen pb-24 text-slate-100 selection:bg-orange-500 selection:text-white" id="upcoming-page-root">
         <UpcomingHeroSkeleton />
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
           <UpcomingGridSkeleton count={6} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!featuredItem || releases.length === 0) {
+    return (
+      <div className="min-h-screen pb-24 text-slate-100 selection:bg-orange-500 selection:text-white flex flex-col items-center justify-center p-8 text-center" id="upcoming-page-root">
+        <div className="max-w-md space-y-4">
+          <Clock className="w-16 h-16 text-orange-500 mx-auto animate-pulse" />
+          <h2 className="text-2xl font-bold text-white">Upcoming Releases Loading</h2>
+          <p className="text-sm text-slate-400">
+            Fetching latest theatrical broadcast schedules and cinema release dates.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg hover:bg-orange-600 transition-all"
+          >
+            Refresh Schedule
+          </button>
         </div>
       </div>
     );

@@ -144,7 +144,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
                 <span className="flex items-center gap-1 rounded-lg bg-black/60 px-2.5 py-1 text-amber-400 border border-amber-400/20 text-xs">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  {currentItem.ratings.imdb.toFixed(1)} IMDb
+                  {(currentItem.ratings?.imdb ?? 0).toFixed(1)} IMDb
                 </span>
 
                 <span className="text-white/70 text-xs flex items-center gap-1">
