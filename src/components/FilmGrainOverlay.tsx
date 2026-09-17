@@ -18,10 +18,12 @@ export const FilmGrainOverlay: React.FC<FilmGrainOverlayProps> = ({
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 z-10 select-none overflow-hidden ${className}`}
+      className={`pointer-events-none absolute inset-0 z-10 select-none overflow-hidden transform-gpu will-change-transform ${className}`}
       style={{
         opacity,
         mixBlendMode: blendMode,
+        transform: 'translateZ(0)',
+        contain: 'strict',
         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
         backgroundRepeat: 'repeat',
         backgroundSize: '160px 160px',

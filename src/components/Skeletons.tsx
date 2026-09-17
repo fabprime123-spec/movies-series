@@ -39,6 +39,76 @@ export const MediaGridSkeleton: React.FC<{ count?: number; cols?: string }> = ({
   );
 };
 
+export const MediaSliderSkeleton: React.FC<{ count?: number }> = ({ count = 7 }) => {
+  return (
+    <div className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none py-3 px-4 sm:px-8 lg:px-12 animate-pulse">
+      {Array.from({ length: count }).map((_, idx) => (
+        <div
+          key={idx}
+          className="w-[140px] sm:w-[170px] md:w-[195px] shrink-0 flex flex-col rounded-2xl bg-card border border-border overflow-hidden"
+        >
+          <div className="aspect-[2/3] w-full bg-surface" />
+          <div className="p-3 space-y-2">
+            <div className="h-4 w-3/4 rounded bg-border" />
+            <div className="h-3 w-1/2 rounded bg-surface" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const CircularCastSliderSkeleton: React.FC<{ count?: number }> = ({ count = 8 }) => {
+  return (
+    <div className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-none py-4 px-4 sm:px-8 lg:px-12 animate-pulse">
+      {Array.from({ length: count }).map((_, idx) => (
+        <div key={idx} className="w-24 sm:w-28 shrink-0 flex flex-col items-center text-center">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-surface border-2 border-border mb-2.5" />
+          <div className="h-3.5 w-20 rounded bg-border mb-1" />
+          <div className="h-2.5 w-16 rounded bg-surface" />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const TrailersSliderSkeleton: React.FC<{ count?: number }> = ({ count = 4 }) => {
+  return (
+    <div className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none py-2 px-4 sm:px-8 lg:px-12 animate-pulse">
+      {Array.from({ length: count }).map((_, idx) => (
+        <div key={idx} className="w-[260px] sm:w-[310px] shrink-0 flex flex-col">
+          <div className="aspect-video w-full rounded-2xl bg-surface border border-border" />
+          <div className="h-4 w-3/4 rounded bg-border mt-2.5 mb-1" />
+          <div className="h-3 w-1/3 rounded bg-surface" />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const BackdropsSliderSkeleton: React.FC<{ count?: number }> = ({ count = 6 }) => {
+  return (
+    <div className="grid grid-rows-2 grid-flow-col gap-4 overflow-x-auto scrollbar-none py-2 px-4 sm:px-8 lg:px-12 animate-pulse">
+      {Array.from({ length: count }).map((_, idx) => (
+        <div key={idx} className="w-[260px] sm:w-[320px] aspect-video rounded-2xl bg-surface border border-border shrink-0" />
+      ))}
+    </div>
+  );
+};
+
+export const SoundtrackSkeleton: React.FC = () => {
+  return (
+    <div className="space-y-4 animate-pulse px-4 sm:px-8 lg:px-12">
+      <div className="h-20 w-full rounded-2xl bg-card border border-border" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <div key={idx} className="h-16 rounded-xl bg-surface border border-border" />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const HeroBannerSkeleton: React.FC = () => {
   return (
     <div className="relative w-full h-[65vh] min-h-[500px] max-h-[750px] bg-card overflow-hidden animate-pulse">

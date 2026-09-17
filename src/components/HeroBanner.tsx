@@ -86,7 +86,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
   return (
     <section 
-      className="relative w-full overflow-hidden rounded-3xl border border-white/10 shadow-2xl transition-all"
+      className="relative w-full overflow-hidden border border-white/10 shadow-2xl transition-all"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -111,8 +111,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             <FilmGrainOverlay opacity={0.36} />
             
             {/* Multi-layered glassmorphic & vignette gradients */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d12] via-[#0c0d12]/70 to-[#0c0d12]/20" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0c0d12] via-[#0c0d12]/80 to-transparent w-full md:w-3/4" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
           </motion.div>
         </AnimatePresence>
 
@@ -127,74 +126,49 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               transition={{ duration: 0.5, delay: 0.1 }}
               className="max-w-2xl space-y-4"
             >
-              {/* Badges row */}
-              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                <span className={`flex items-center gap-1 rounded-lg bg-gradient-to-r ${accentConfig.gradient} px-2.5 py-1 text-white backdrop-blur-md shadow-md uppercase tracking-wider text-[11px] font-bold`}>
-                  <Flame className="h-3.5 w-3.5 fill-current" />
-                  Trending #{currentItem.trendingRank || 1}
-                </span>
-
-                <span className="rounded-lg bg-white/10 px-2.5 py-1 text-white/90 backdrop-blur-md border border-white/10 uppercase tracking-wider text-[11px]">
-                  {currentItem.type === 'movie' ? 'Cinema Premiere' : currentItem.type === 'tv' ? 'Peak Series' : 'Animation'}
-                </span>
-
-                <span className={`rounded-lg ${accentConfig.badgeBg} px-2 py-1 ${accentConfig.badgeText} backdrop-blur-md border border-current/30 text-[11px] font-bold`}>
-                  {currentItem.ageRating}
-                </span>
-
-                <span className="flex items-center gap-1 rounded-lg bg-black/60 px-2.5 py-1 text-amber-400 border border-amber-400/20 text-xs">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  {(currentItem.ratings?.imdb ?? 0).toFixed(1)} IMDb
-                </span>
-
-                <span className="text-white/70 text-xs flex items-center gap-1">
-                  {currentItem.runtimeMinutes 
-                    ? `${Math.floor(currentItem.runtimeMinutes / 60)}h ${currentItem.runtimeMinutes % 60}m` 
-                    : `${currentItem.totalSeasons || 1} Season${(currentItem.totalSeasons || 1) > 1 ? 's' : ''}`}
+              {/* Minimalist Metadata Pill */}
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-2 rounded-full bg-black/50 px-3.5 py-1 text-xs font-medium text-white/90 backdrop-blur-md border border-white/15 shadow-sm">
+                  <span className="flex items-center gap-1 font-bold text-amber-400">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    {(currentItem.ratings?.imdb ?? 0).toFixed(1)}
+                  </span>
+                  <span className="text-white/30">•</span>
+                  <span>{currentItem.releaseYear}</span>
+                  <span className="text-white/30">•</span>
+                  <span className="text-white/80">{currentItem.type === 'tv' ? 'Series' : currentItem.genres?.[0] || 'Cinema'}</span>
+                  {currentItem.runtimeMinutes && (
+                    <>
+                      <span className="text-white/30">•</span>
+                      <span className="text-white/70">{Math.floor(currentItem.runtimeMinutes / 60)}h {currentItem.runtimeMinutes % 60}m</span>
+                    </>
+                  )}
                 </span>
               </div>
 
-              {/* Title & Tagline in editorial styling */}
-              <div>
-                <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white drop-shadow-md leading-tight">
+              {/* Title & Concise Logline */}
+              <div className="space-y-2">
+                <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-md leading-tight">
                   {currentItem.title}
                 </h1>
                 {currentItem.tagline && (
-                  <p className="mt-1 text-sm sm:text-base font-serif italic text-amber-200/90">
+                  <p className="text-sm sm:text-base font-serif italic text-amber-200/90 line-clamp-1">
                     "{currentItem.tagline}"
                   </p>
                 )}
               </div>
 
-              {/* Overview snippet */}
-              <p className="line-clamp-2 sm:line-clamp-3 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
+              {/* Overview snippet - concise */}
+              <p className="line-clamp-2 text-xs sm:text-sm text-white/80 leading-relaxed max-w-xl">
                 {currentItem.overview}
               </p>
 
-              {/* Global Audio Dubs & Subtitles pill indicators */}
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-white/80">
-                <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 backdrop-blur-md border border-white/10">
-                  <Volume2 className={`h-3.5 w-3.5 ${accentConfig.badgeText}`} />
-                  <span><strong>{currentItem.dubbedLanguages.length}</strong> Dubbed Audio Tracks</span>
-                </div>
-                <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 backdrop-blur-md border border-white/10">
-                  <Subtitles className="h-3.5 w-3.5 text-amber-400" />
-                  <span><strong>{currentItem.subtitledLanguages.length}</strong> Subtitles</span>
-                </div>
-                {currentItem.awards.length > 0 && (
-                  <div className="hidden sm:flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-amber-300 border border-amber-500/20">
-                    <Award className="h-3.5 w-3.5 text-amber-400" />
-                    <span className="truncate max-w-[200px]">{currentItem.awards[0]}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              {/* Focused Action Buttons */}
+              <div className="flex items-center gap-3 pt-2">
                 <button
                   id={`hero-play-trailer-${currentItem.id}`}
                   onClick={handleTrailerClick}
-                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-95 px-6 py-3.5 text-sm font-bold text-white shadow-xl hover:scale-102 active:scale-98 transition-all`}
+                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-95 px-5 sm:px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-xl hover:scale-102 active:scale-98 transition-all`}
                 >
                   <Play className="h-4 w-4 fill-white" />
                   <span>Watch Trailer</span>
@@ -203,23 +177,23 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <button
                   id={`hero-view-details-${currentItem.id}`}
                   onClick={handleDetailsClick}
-                  className="flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md px-6 py-3.5 text-sm font-semibold text-white border border-white/10 transition-all active:scale-98"
+                  className="flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-white border border-white/15 transition-all active:scale-98"
                 >
                   <Info className="h-4 w-4" />
-                  <span>All Details & Cast</span>
+                  <span>Details</span>
                 </button>
 
                 <button
                   id={`hero-watchlist-toggle-${currentItem.id}`}
                   onClick={handleWatchlistToggle}
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl backdrop-blur-xl border transition-all active:scale-90 ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-2xl backdrop-blur-xl border transition-all active:scale-90 ${
                     inWatchlist
-                      ? `${accentConfig.badgeBg} border-current ${accentConfig.badgeText} shadow-md`
-                      : 'bg-white/10 border-white/10 text-white hover:bg-white/20'
+                      ? 'bg-amber-500 border-amber-400 text-black shadow-md'
+                      : 'bg-black/50 border-white/15 text-white hover:bg-white/20'
                   }`}
                   title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
                 >
-                  {inWatchlist ? <BookmarkCheck className="h-5 w-5 fill-current" /> : <Bookmark className="h-5 w-5" />}
+                  {inWatchlist ? <BookmarkCheck className="h-4 w-4 fill-current" /> : <Bookmark className="h-4 w-4" />}
                 </button>
               </div>
             </motion.div>

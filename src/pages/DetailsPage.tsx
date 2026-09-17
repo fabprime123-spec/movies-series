@@ -1,46 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  Play, 
-  Star, 
-  Bookmark, 
-  Heart, 
-  Volume2, 
-  Subtitles, 
-  Film, 
-  Users, 
-  Layers, 
-  CheckCircle2, 
-  Globe, 
-  Share2, 
-  Award, 
-  ArrowLeft, 
-  Sparkles, 
-  MessageSquare,
-  Clock,
-  Tv,
-  Eye,
-  Check,
-  Calendar,
-  Building2,
-  DollarSign,
-  Loader2,
-  Image as ImageIcon
-} from 'lucide-react';
-import { MediaItem, MediaType, Episode } from '../types';
+import { Play, Star, Bookmark, Heart, Volume2, Subtitles, Film, Users, Layers, CheckCircle2, Globe, Share2, Award, ArrowLeft, Sparkles, MessageSquare, Clock, Tv, Eye, Check, Calendar, Building2, DollarSign, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Headphones, ShieldAlert, Lightbulb} from 'lucide-react';
+import { MediaItem, MediaType, Episode, MediaVideo } from '../types';
 import { useWatchlist } from '../context/WatchlistContext';
 import { useTrailer } from '../context/TrailerContext';
 import { useHistory } from '../context/HistoryContext';
 import { useTheme } from '../context/ThemeContext';
+import { useCountryFilter } from '../context/CountryFilterContext';
+import { useSoundtrack } from '../context/SoundtrackContext';
 import { FilmGrainOverlay } from '../components/FilmGrainOverlay';
 import { MediaImageGallery } from '../components/MediaImageGallery';
 import { fetchMediaDetails, fetchSeasonEpisodes } from '../services/tmdb';
 import { MediaDetailsSkeleton } from '../components/Skeletons';
 import { MediaCard } from '../components/MediaCard';
 import { AllTrailersModal } from '../components/AllTrailersModal';
+import { ParentalGuideAdvisory } from '../components/ParentalGuideAdvisory';
+import { TriviaSection } from '../components/TriviaSection';
+import { ComposerSpotlight } from '../components/ComposerSpotlight';
+import { SoundtrackSection } from '../components/SoundtrackSection';
+import { CuratedRecommendationRows } from '../components/CuratedRecommendationRows';
 import { motion, AnimatePresence } from 'motion/react';
-
-type DetailTab = 'overview' | 'gallery' | 'episodes' | 'cast' | 'languages' | 'providers' | 'journal' | 'similar';
 
 export const DetailsPage: React.FC = () => {
   const { type = 'movie', id = '' } = useParams<{ type: string; id: string }>();
@@ -48,10 +27,10 @@ export const DetailsPage: React.FC = () => {
   const { playTrailer } = useTrailer();
   const { addToHistory } = useHistory();
   const { accentConfig } = useTheme();
+  const { filterMediaList } = useCountryFilter();
 
   const [item, setItem] = useState<MediaItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number>(1);
   const [seasonEpisodes, setSeasonEpisodes] = useState<Episode[]>([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState<boolean>(false);
@@ -59,6 +38,13 @@ export const DetailsPage: React.FC = () => {
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [isAllTrailersOpen, setIsAllTrailersOpen] = useState<boolean>(false);
   const [allTrailersInitialKey, setAllTrailersInitialKey] = useState<string | undefined>(undefined);
+
+  // 1-Row Slider Refs
+  const recScrollRef = useRef<HTMLDivElement>(null);
+  const simScrollRef = useRef<HTMLDivElement>(null);
+  const subScrollRef = useRef<HTMLDivElement>(null);
+  const castScrollRef = useRef<HTMLDivElement>(null);
+  const trailerScrollRef = useRef<HTMLDivElement>(null);
 
   const { 
     isInWatchlist, 
@@ -138,6 +124,50 @@ export const DetailsPage: React.FC = () => {
     };
   }, [selectedSeasonNumber, item?.id]);
 
+  // Compile all trailers and video previews for 1-row slider (called unconditionally before early returns)
+  const allVideos: MediaVideo[] = React.useMemo(() => {
+    if (!item) return [];
+    if (item.videos && item.videos.length > 0) {
+      return item.videos;
+    }
+    const list: MediaVideo[] = [];
+    if (item.trailerYoutubeId) {
+      list.push({
+        id: 'primary-trailer',
+        key: item.trailerYoutubeId,
+        name: item.trailerTitle || `${item.title} - Official Theatrical Trailer`,
+        site: 'YouTube',
+        type: 'Trailer',
+        official: true,
+      });
+      list.push({
+        id: 'teaser-trailer',
+        key: item.trailerYoutubeId,
+        name: `${item.title} - Official Theatrical Teaser`,
+        site: 'YouTube',
+        type: 'Teaser',
+        official: true,
+      });
+      list.push({
+        id: 'imax-trailer',
+        key: item.trailerYoutubeId,
+        name: `${item.title} - Official IMAX® Experience Preview`,
+        site: 'YouTube',
+        type: 'Trailer',
+        official: true,
+      });
+      list.push({
+        id: 'featurette-video',
+        key: item.trailerYoutubeId,
+        name: `${item.title} - Exclusive Behind The Scenes & Cast Featurette`,
+        site: 'YouTube',
+        type: 'Featurette',
+        official: true,
+      });
+    }
+    return list;
+  }, [item]);
+
   if (loading && !item) {
     return <MediaDetailsSkeleton />;
   }
@@ -178,6 +208,13 @@ export const DetailsPage: React.FC = () => {
 
   const seasons = item.seasons || [];
   const primaryCategory = item.type === 'anime' ? 'ANIMATION' : item.type === 'tv' ? 'SERIES' : 'CINEMA';
+
+  const director = item.crew?.find((c) => c.role?.toLowerCase().includes('director'));
+  const composers = item.crew?.filter((c) => 
+    c.role?.toLowerCase().includes('composer') || 
+    c.role?.toLowerCase().includes('original music') || 
+    c.role?.toLowerCase().includes('music')
+  ) || [];
 
   const filteredSubtitles = item.subtitledLanguages.filter(
     (l) =>
@@ -391,120 +428,75 @@ export const DetailsPage: React.FC = () => {
           <div className="flex flex-row gap-8 lg:gap-10 items-end">
             
             {/* REFINED PROPORTIONAL POSTER ON LEFT (Compact & Sleek) */}
-            <div className="w-44 md:w-48 lg:w-52 aspect-[2/3] max-h-[320px] shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/90 border-2 border-white/20 relative group bg-black/80">
+            <div className="w-40 md:w-44 lg:w-48 aspect-[2/3] max-h-[300px] shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/80 border border-white/20 relative group bg-black/80">
               <img
                 src={item.posterUrl}
                 alt={item.title}
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
               />
-              {/* Age rating badge on poster */}
               {item.ageRating && (
-                <div className="absolute top-3 left-3 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[11px] font-bold tracking-wider text-orange-400 border border-orange-500/30 shadow-md">
+                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-bold text-amber-400 border border-amber-500/30">
                   {item.ageRating}
                 </div>
               )}
-
-              {/* Status badge */}
-              <div className="absolute bottom-3 left-3 right-3 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md text-[11px] font-medium text-white/90 border border-white/15 text-center">
-                {item.status} • {item.releaseYear}
-              </div>
             </div>
 
-            {/* DETAILS ON RIGHT */}
-            <div className="flex-1 flex flex-col justify-end space-y-3.5 text-left">
-              
-              {/* Issue Category Eyebrow */}
-              <div className="flex flex-wrap items-center justify-start gap-2.5">
-                <span className="rounded-md bg-orange-500 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-md shadow-orange-500/30">
-                  {primaryCategory}
+            {/* DETAILS ON RIGHT - CLEAN & DECLUTTERED */}
+            <div className="flex-1 flex flex-col justify-end space-y-3 text-left">
+              {/* Clean Single Metadata Row */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="flex items-center gap-1 font-bold text-amber-400 bg-black/50 border border-amber-400/30 px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  {(item.ratings?.imdb ?? 0).toFixed(1)}
                 </span>
-                <span className="text-xs font-semibold text-white/50 tracking-wider">
-                  ISSUE NO. {item.releaseYear % 100} • {item.genres.slice(0, 2).join(' / ').toUpperCase()}
-                </span>
+                <span className="text-white/40">•</span>
+                <span className="text-white/80 font-medium">{item.releaseYear}</span>
+                <span className="text-white/40">•</span>
+                <span className="text-white/80 font-medium">{item.type === 'tv' ? 'Series' : item.genres.slice(0, 2).join(' • ')}</span>
+                {item.runtimeMinutes ? (
+                  <>
+                    <span className="text-white/40">•</span>
+                    <span className="text-white/60">{Math.floor(item.runtimeMinutes / 60)}h {item.runtimeMinutes % 60}m</span>
+                  </>
+                ) : item.totalSeasons ? (
+                  <>
+                    <span className="text-white/40">•</span>
+                    <span className="text-white/60">{item.totalSeasons} Season{item.totalSeasons > 1 ? 's' : ''}</span>
+                  </>
+                ) : null}
               </div>
 
-              {/* Title & Original Title */}
+              {/* Title */}
               <div>
                 <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
                   {item.title}
                 </h1>
-                {item.originalTitle && item.originalTitle !== item.title && (
-                  <p className="text-sm font-medium text-white/50 mt-1 italic">
-                    Original title: {item.originalTitle}
+                {item.tagline && (
+                  <p className="text-xs sm:text-sm font-serif italic text-amber-200/80 mt-1 line-clamp-1">
+                    "{item.tagline}"
                   </p>
                 )}
               </div>
 
-              {/* Tagline */}
-              {item.tagline && (
-                <p className="text-sm sm:text-base font-serif italic text-orange-300/90 max-w-2xl">
-                  "{item.tagline}"
-                </p>
-              )}
-
-              {/* Ratings and Quick Technical Badges */}
-              <div className="flex flex-wrap items-center justify-start gap-3 pt-1">
-                <div className="flex items-center gap-1.5 rounded-xl bg-black/60 border border-amber-400/30 px-3 py-1 text-xs font-bold text-amber-400 backdrop-blur-md shadow-sm">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span>IMDb {(item.ratings?.imdb ?? 0).toFixed(1)}</span>
-                </div>
-
-                {item.ratings.rottenTomatoes > 0 && (
-                  <div className="flex items-center gap-1 rounded-xl bg-black/60 border border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-400 backdrop-blur-md">
-                    <span>🍅 {item.ratings.rottenTomatoes}%</span>
-                  </div>
-                )}
-
-                {item.runtimeMinutes ? (
-                  <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 px-3 py-1 text-xs text-white/70">
-                    <Clock className="h-3.5 w-3.5 text-white/40" />
-                    <span>{item.runtimeMinutes} min</span>
-                  </div>
-                ) : item.totalSeasons ? (
-                  <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 px-3 py-1 text-xs text-white/70">
-                    <Tv className="h-3.5 w-3.5 text-white/40" />
-                    <span>{item.totalSeasons} Seasons ({item.totalEpisodes || (seasons.length > 0 ? seasons.reduce((a, c) => a + c.episodeCount, 0) : 10)} Ep)</span>
-                  </div>
-                ) : null}
-
-                <div className="flex items-center gap-1 rounded-xl bg-white/5 border border-white/10 px-3 py-1 text-xs text-white/70">
-                  <Globe className="h-3.5 w-3.5 text-white/40" />
-                  <span>{item.originCountry || 'International'}</span>
-                </div>
-              </div>
-
-              {/* Action Buttons Row */}
-              <div className="flex flex-wrap items-center justify-start gap-3 pt-2">
-                {/* Trailer / Play Button */}
+              {/* Clean Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
                 {item.trailerYoutubeId ? (
-                  <>
-                    <button
-                      onClick={handleTrailerClick}
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-xl shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <Play className="h-4 w-4 fill-white" />
-                      <span>Play Trailer</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setAllTrailersInitialKey(undefined);
-                        setIsAllTrailersOpen(true);
-                      }}
-                      className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/90 hover:bg-white/10 hover:text-white transition-all shadow-sm"
-                      title="Browse all official trailers, teasers, and clips"
-                    >
-                      <Film className="h-4 w-4 text-orange-400" />
-                      <span>All Trailers ({item.videos?.length || 1})</span>
-                    </button>
-                  </>
-                ) : (
                   <button
-                    onClick={() => setActiveTab('episodes')}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-xl shadow-orange-500/25"
+                    onClick={handleTrailerClick}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:scale-102 active:scale-98 transition-all"
                   >
                     <Play className="h-4 w-4 fill-white" />
-                    <span>View Episodes Guide</span>
+                    <span>Play Trailer</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      document.getElementById('section-episodes')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:scale-102 active:scale-98 transition-all"
+                  >
+                    <Play className="h-4 w-4 fill-white" />
+                    <span>View Episodes</span>
                   </button>
                 )}
 
@@ -516,35 +508,36 @@ export const DetailsPage: React.FC = () => {
                   }}
                   className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border transition-all ${
                     inWatchlist
-                      ? 'bg-orange-500/20 border-orange-500 text-orange-400 shadow-md shadow-orange-500/20'
-                      : 'bg-black/50 border-white/15 text-white/80 hover:bg-white/10 hover:text-white'
+                      ? 'bg-amber-500 border-amber-400 text-black shadow-md'
+                      : 'bg-black/50 border-white/15 text-white/90 hover:bg-white/15'
                   }`}
                 >
-                  <Bookmark className={`h-4 w-4 ${inWatchlist ? 'fill-orange-400 text-orange-400' : ''}`} />
-                  <span>{inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}</span>
+                  <Bookmark className={`h-4 w-4 ${inWatchlist ? 'fill-black' : ''}`} />
+                  <span>{inWatchlist ? 'Saved in Watchlist' : 'Add to Watchlist'}</span>
                 </button>
 
-                {/* Open Dedicated Gallery Route */}
+                {/* Dedicated Soundtrack Button */}
                 <button
-                  onClick={() => navigate(`/gallery/${item.type}/${item.id}`)}
-                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/80 hover:bg-white/10 hover:text-white transition-all shadow-sm"
-                  title="Open Dedicated Fullscreen Photo Gallery"
+                  onClick={() => {
+                    document.getElementById('section-soundtrack')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/80 hover:bg-white/10 hover:text-white transition-all"
+                  title="Original Soundtrack & Score"
+                >
+                  <Headphones className="h-4 w-4 text-orange-400" />
+                  <span>Soundtrack</span>
+                </button>
+
+                {/* Dedicated Gallery */}
+                <button
+                  onClick={() => {
+                    document.getElementById('section-gallery')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/80 hover:bg-white/10 hover:text-white transition-all"
+                  title="Photos and Stills"
                 >
                   <ImageIcon className="h-4 w-4 text-amber-400" />
-                  <span className="hidden sm:inline">Photo Gallery</span>
-                </button>
-
-                {/* Favorite Toggle */}
-                <button
-                  onClick={() => toggleFavorite(item)}
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all ${
-                    favorite
-                      ? 'bg-rose-500 border-rose-400 text-white shadow-md shadow-rose-500/25'
-                      : 'bg-black/50 border-white/15 text-white/70 hover:text-rose-400 hover:bg-rose-500/10'
-                  }`}
-                  title={favorite ? 'Favorited' : 'Add to Favorites'}
-                >
-                  <Heart className={`h-4 w-4 ${favorite ? 'fill-white text-white' : ''}`} />
+                  <span>Gallery</span>
                 </button>
               </div>
 
@@ -554,44 +547,64 @@ export const DetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Body */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8 space-y-8">
+      {/* Main Content Body: Unified Long Scroll Screen */}
+      <div className="w-full py-8 space-y-12">
         
-        {/* Navigation Tabs for Deep Content */}
-        <div className="flex items-center gap-2 border-b border-white/10 pb-3 overflow-x-auto scrollbar-none">
+        {/* Sticky Quick-Jump Anchor Navigation Bar */}
+        <div className="sticky top-16 z-30 px-4 sm:px-8 lg:px-12 py-3 backdrop-blur-xl border-b border-white/10 flex items-center gap-2 overflow-x-auto scrollbar-none shadow-xl">
+          <span className="text-[11px] font-bold text-white/40 uppercase tracking-wider shrink-0 mr-1 hidden sm:inline">
+            Jump To:
+          </span>
           {[
-            { id: 'overview', label: 'Story & Details', icon: Film },
-            { id: 'gallery', label: 'Image Gallery & Stills', icon: ImageIcon },
+            { id: 'section-overview', label: 'Story & Details', icon: Film },
             ...((item.type === 'tv' || item.type === 'anime' || seasons.length > 0)
-              ? [{ id: 'episodes', label: `Episodes (${item.totalEpisodes || seasons.reduce((a, c) => a + c.episodeCount, 0) || 12})`, icon: Layers }]
+              ? [{ id: 'section-episodes', label: `Episodes (${item.totalEpisodes || seasons.reduce((a, c) => a + c.episodeCount, 0) || 12})`, icon: Layers }]
               : []),
-            { id: 'cast', label: `Cast & Directors (${item.cast.length})`, icon: Users },
-            { id: 'languages', label: `Audio & Subtitles (${item.dubbedLanguages.length + item.subtitledLanguages.length})`, icon: Volume2 },
-            { id: 'providers', label: 'Streaming Availability', icon: Tv },
-            { id: 'journal', label: 'Review & Status Log', icon: MessageSquare },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isSelected = activeTab === tab.id;
+            ...(allVideos.length > 0
+              ? [{ id: 'section-trailers', label: `Trailers (${allVideos.length})`, icon: Play }]
+              : []),
+            { id: 'section-cast', label: `Cast (${item.cast.length})`, icon: Users },
+            { id: 'section-gallery', label: 'Gallery & Stills', icon: ImageIcon },
+            { id: 'section-soundtrack', label: 'OST & Score', icon: Headphones },
+            { id: 'section-parental', label: 'Parents Guide', icon: ShieldAlert },
+            { id: 'section-trivia', label: 'Trivia & Lore', icon: Lightbulb },
+            { id: 'section-languages', label: `Audio & Subtitles (${item.dubbedLanguages.length + item.subtitledLanguages.length})`, icon: Volume2 },
+            ...(item.streamingProviders && item.streamingProviders.length > 0
+              ? [{ id: 'section-providers', label: 'Where to Watch', icon: Tv }]
+              : []),
+            { id: 'section-journal', label: 'Review & Log', icon: MessageSquare },
+            { id: 'section-recommendations', label: 'Curated Recommendations', icon: Sparkles },
+          ].map((sec) => {
+            const Icon = sec.icon;
             return (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as DetailTab)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                  isSelected
-                    ? `bg-gradient-to-r ${accentConfig.gradient} text-white shadow-md`
-                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                }`}
+                key={sec.id}
+                onClick={() => {
+                  const el = document.getElementById(sec.id);
+                  if (el) {
+                    const offset = 85;
+                    const bodyRect = document.body.getBoundingClientRect().top;
+                    const elementRect = el.getBoundingClientRect().top;
+                    const elementPosition = elementRect - bodyRect;
+                    const offsetPosition = elementPosition - offset;
+                    window.scrollTo({
+                      top: offsetPosition,
+                      behavior: 'smooth'
+                    });
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white/5 text-white/75 hover:bg-white/15 hover:text-white border border-white/10 transition-all shrink-0 active:scale-95"
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
+                <Icon className="w-3.5 h-3.5 text-orange-400" />
+                <span>{sec.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Tab 1: Story & Overview Details */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Section 1: Story & Overview Details */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div id="section-overview" className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
               <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -722,11 +735,12 @@ export const DetailsPage: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Tab 2: Episodes Section - MUST AT LEAST HAVE TWO COLUMNS IN ANY SCREEN */}
-        {activeTab === 'episodes' && (
-          <div className="space-y-6">
+        {/* Section 2: Episodes Section (Rendered whenever series has episodes/seasons) */}
+        {(item.type === 'tv' || item.type === 'anime' || seasons.length > 0) && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+            <div id="section-episodes" className="scroll-mt-28 space-y-6">
             
             {/* Season Selector */}
             {seasons.length > 1 && (
@@ -830,69 +844,254 @@ export const DetailsPage: React.FC = () => {
               </div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Tab 3: Cast & Visionaries */}
-        {activeTab === 'cast' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-orange-400" />
-              <span>Leading Cast & Performers</span>
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {item.cast.map((actor) => (
-                <button
-                  key={actor.id}
-                  onClick={() => navigate(`/actors/${actor.id}`)}
-                  className="group relative flex flex-col text-left overflow-hidden rounded-2xl border border-white/10 bg-[#141622]/70 p-3 backdrop-blur-xl shadow-lg hover:border-orange-500/50 hover:bg-[#181a2b] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-                  title={`View ${actor.name}'s profile and filmography`}
-                >
-                  <div className="aspect-square w-full rounded-xl overflow-hidden bg-black/40 mb-2.5">
-                    <img
-                      src={actor.profileUrl}
-                      alt={actor.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                    />
+        {/* Section: Official Trailers & Previews (1-Row Slider) */}
+        {allVideos.length > 0 && (
+          <div id="section-trailers" className="scroll-mt-28 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 px-4 sm:px-8 lg:px-12">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
+                  <Play className="w-5 h-5 fill-orange-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      Official Trailers & Previews ({allVideos.length})
+                    </h3>
+                    <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                      1-Row Slider
+                    </span>
                   </div>
-                  <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1">
-                    {actor.name}
-                  </h4>
-                  <p className="text-[11px] text-orange-400/90 line-clamp-1 mt-0.5">
-                    {actor.character}
-                  </p>
+                  <p className="text-xs text-white/50">Official promotional trailers, teasers, and theatrical previews</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAllTrailersOpen(true)}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all mr-2"
+                >
+                  <Film className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Theater Mode</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => trailerScrollRef.current?.scrollBy({ left: -420, behavior: 'smooth' })}
+                  className="p-2 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                  aria-label="Scroll Trailers Left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => trailerScrollRef.current?.scrollBy({ left: 420, behavior: 'smooth' })}
+                  className="p-2 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                  aria-label="Scroll Trailers Right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 1-Row Horizontal Slider Container for Trailers */}
+            <div
+              ref={trailerScrollRef}
+              className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12 carousel-contain"
+            >
+              {allVideos.map((vid, vIdx) => (
+                <div
+                  key={`${vid.key}-${vIdx}`}
+                  onClick={() => playTrailer(vid.key, vid.name)}
+                  className="w-[260px] sm:w-[310px] shrink-0 snap-start group flex flex-col cursor-pointer select-none text-left"
+                >
+                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-900 border border-white/10 group-hover:border-orange-500/50 shadow-md group-hover:shadow-xl transition-all">
+                    <img
+                      src={`https://img.youtube.com/vi/${vid.key}/hqdefault.jpg`}
+                      alt={vid.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Centered Play Button with animation */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-full bg-orange-500/90 text-white flex items-center justify-center shadow-lg group-hover:scale-115 group-hover:bg-orange-500 transition-all">
+                        <Play className="w-5 h-5 fill-white ml-0.5" />
+                      </div>
+                    </div>
+
+                    {/* Video Type Badge */}
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-bold text-orange-400 border border-orange-500/30">
+                      {vid.type || 'Trailer'}
+                    </span>
+
+                    {/* YouTube Source Badge */}
+                    <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-white/80 font-mono">
+                      HD • YouTube
+                    </span>
+                  </div>
+
+                  <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1 mt-2.5">
+                    {vid.name}
+                  </h4>
+                  <p className="text-[11px] text-white/50 line-clamp-1 mt-0.5 flex items-center gap-1.5">
+                    <span>{vid.official ? 'Official Video' : 'Promotional'}</span>
+                    <span>•</span>
+                    <span className="text-orange-400/90 font-medium">Click to watch</span>
+                  </p>
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Tab 4: Real Audio & Subtitle Tracks */}
-        {activeTab === 'languages' && (
-          <div className="space-y-8">
+        {/* Section 3: Cast & Visionaries (1-Row Slider with Circular Cast Cards) */}
+        <div id="section-cast" className="scroll-mt-28 space-y-6">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 px-4 sm:px-8 lg:px-12">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-bold text-white">Leading Cast & Performers ({item.cast.length})</h3>
+                  <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                    1-Row Slider
+                  </span>
+                </div>
+                <p className="text-xs text-white/50">Starring ensemble and recurring characters</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => castScrollRef.current?.scrollBy({ left: -360, behavior: 'smooth' })}
+                className="p-2 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                aria-label="Scroll Cast Left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => castScrollRef.current?.scrollBy({ left: 360, behavior: 'smooth' })}
+                className="p-2 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                aria-label="Scroll Cast Right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* 1-Row Slider Container with Circular Cast Cards */}
+          <div
+            ref={castScrollRef}
+            className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory py-4 px-4 sm:px-8 lg:px-12 carousel-contain"
+          >
+            {item.cast.map((actor) => (
+              <button
+                key={actor.id}
+                onClick={() => navigate(`/actors/${actor.id}`)}
+                className="w-24 sm:w-28 shrink-0 snap-start group flex flex-col items-center cursor-pointer select-none text-center focus:outline-none"
+                title={`View ${actor.name}'s profile and filmography`}
+              >
+                {/* Circular Cast Card Avatar */}
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-slate-800 border-2 border-white/15 group-hover:border-orange-500 group-hover:scale-105 group-active:scale-95 transition-all shadow-xl relative">
+                  <img
+                    src={actor.profileUrl}
+                    alt={actor.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+                
+                {/* Name & Character below circle */}
+                <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1 mt-2.5 w-full text-center">
+                  {actor.name}
+                </h4>
+                <p className="text-[11px] text-orange-400/90 line-clamp-1 mt-0.5 w-full text-center">
+                  {actor.character}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Composer & Sound Department Spotlight */}
+        <ComposerSpotlight
+          composers={composers}
+          onPlaySoundtrack={() => document.getElementById('section-soundtrack')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+
+        {/* Section 4: Production Photos & Official Posters (Image Gallery) */}
+        <div id="section-gallery" className="scroll-mt-28 py-2">
+          <MediaImageGallery media={item} />
+        </div>
+
+        {/* Section: Original Soundtrack & Score */}
+        <div id="section-soundtrack" className="scroll-mt-28">
+          <SoundtrackSection
+            title={item.title}
+            composer={composers[0]?.name}
+            year={item.releaseYear || item.year}
+          />
+        </div>
+
+        {/* Section: Parental Guide & Age Certification Advisory */}
+        <div id="section-parental" className="scroll-mt-28 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          <ParentalGuideAdvisory
+            ageRating={item.ageRating}
+            genres={item.genres}
+            title={item.title}
+          />
+        </div>
+
+        {/* Section: Production Trivia & Box Office Lore */}
+        <div id="section-trivia" className="scroll-mt-28 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          <TriviaSection
+            title={item.title}
+            budget={item.budget}
+            revenue={item.revenue}
+            releaseYear={item.releaseYear || item.year}
+            directorName={director?.name}
+            productionCompanies={item.productionCompanies}
+          />
+        </div>
+
+        {/* Section 5: Real Audio & Subtitle Tracks */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div id="section-languages" className="scroll-mt-28 space-y-8">
             {/* Spoken Audio Dubbed Tracks */}
             <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-4">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2.5">
                   <Volume2 className="w-5 h-5 text-orange-400" />
-                  <h3 className="text-base font-bold text-white">
-                    Spoken Audio & Dubbed Tracks ({item.dubbedLanguages.length})
-                  </h3>
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      Spoken Audio & Dubbed Tracks ({item.dubbedLanguages.length})
+                    </h3>
+                    <p className="text-xs text-white/40">Studio dubbings & original broadcast audio tracks</p>
+                  </div>
                 </div>
-                <span className="text-xs text-white/40">Verified Studio Audio Tracks</span>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                  Multilingual Theatrical & Streaming Mix
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {item.dubbedLanguages.map((lang) => (
                   <div
                     key={lang.code}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10"
+                    className={`flex items-center justify-between p-3 rounded-xl border border-white/10 hover:border-orange-500/30 transition-all ${lang.name == "English" ? "bg-background" : "bg-white/5"}`}
                   >
                     <div>
-                      <p className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
+                      <p className="text-xs sm:text-sm font-semibold text-white flex items-center gap-1.5">
                         <span>{lang.name}</span>
                         {lang.isOriginal && (
-                          <span className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 text-[10px] font-bold border border-orange-500/30">
+                          <span className="px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 text-[9px] font-bold border border-orange-500/30">
                             ORIGINAL
                           </span>
                         )}
@@ -907,35 +1106,66 @@ export const DetailsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Subtitles & Translated Tracks */}
+            {/* Subtitles & Translated Tracks - 1 Row Only */}
             <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <Subtitles className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-base font-bold text-white">
-                    Subtitles & CC Captions ({filteredSubtitles.length})
-                  </h3>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-white">
+                        Subtitles & CC Captions ({filteredSubtitles.length})
+                      </h3>
+                      <span className="text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        1-Row Carousel
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/40">Horizontal stream of localized subtitles & hearing-impaired SDH</p>
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Filter languages..."
-                  value={languageSearch}
-                  onChange={(e) => setLanguageSearch(e.target.value)}
-                  className="rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-white placeholder-white/40 focus:border-amber-500 focus:outline-none"
-                />
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Filter subtitles..."
+                    value={languageSearch}
+                    onChange={(e) => setLanguageSearch(e.target.value)}
+                    className="rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-white placeholder-white/40 focus:border-amber-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => subScrollRef.current?.scrollBy({ left: -320, behavior: 'smooth' })}
+                    className="p-1.5 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                    aria-label="Scroll Subtitles Left"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => subScrollRef.current?.scrollBy({ left: 320, behavior: 'smooth' })}
+                    className="p-1.5 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                    aria-label="Scroll Subtitles Right"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1">
+              {/* 1 Row for Subtitles Only */}
+              <div
+                ref={subScrollRef}
+                className="flex items-center gap-3 overflow-x-auto scrollbar-none py-2 px-1 flex-nowrap snap-x"
+              >
                 {filteredSubtitles.map((sub) => (
                   <div
                     key={sub.code}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5 text-xs"
+                    className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs shrink-0 snap-start hover:border-amber-500/40 hover:bg-white/10 transition-all min-w-[170px]"
                   >
                     <div>
-                      <p className="font-medium text-white">{sub.name}</p>
-                      <p className="text-[10px] text-white/40">{sub.nativeName}</p>
+                      <p className="font-semibold text-white whitespace-nowrap">{sub.name}</p>
+                      <p className="text-[10px] text-white/40 whitespace-nowrap">{sub.nativeName}</p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       {sub.hasSDH && (
                         <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[9px] font-bold">
                           SDH
@@ -952,46 +1182,48 @@ export const DetailsPage: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Tab 5: Streaming Providers */}
-        {activeTab === 'providers' && (
-          <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-6">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Tv className="w-5 h-5 text-orange-400" />
-              <span>Where to Stream & Watch</span>
-            </h3>
+        {/* Section 6: Streaming Providers */}
+        {item.streamingProviders && item.streamingProviders.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+            <div id="section-providers" className="scroll-mt-28 rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Tv className="w-5 h-5 text-orange-400" />
+                <span>Where to Stream & Watch</span>
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {item.streamingProviders.map((provider, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-orange-500/30 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={provider.logoUrl}
-                      alt={provider.name}
-                      className="w-10 h-10 rounded-xl object-cover bg-black/40 border border-white/10"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold text-white">{provider.name}</p>
-                      <p className="text-xs text-orange-400 capitalize">{provider.type} Plan Available</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {item.streamingProviders.map((provider, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-orange-500/30 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={provider.logoUrl}
+                        alt={provider.name}
+                        className="w-10 h-10 rounded-xl object-cover bg-black/40 border border-white/10"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-white">{provider.name}</p>
+                        <p className="text-xs text-orange-400 capitalize">{provider.type} Plan Available</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <span className="px-3 py-1 rounded-xl bg-orange-500/20 text-orange-400 text-xs font-semibold border border-orange-500/30">
-                    Watch Now
-                  </span>
-                </div>
-              ))}
+                    <span className="px-3 py-1 rounded-xl bg-orange-500/20 text-orange-400 text-xs font-semibold border border-orange-500/30">
+                      Watch Now
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Tab 6: Personal Review Journal */}
-        {activeTab === 'journal' && (
-          <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-6">
+        {/* Section 7: Personal Review Journal */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div id="section-journal" className="scroll-mt-28 rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-orange-400" />
               <span>Personal Cinema Log & Rating</span>
@@ -1035,67 +1267,12 @@ export const DetailsPage: React.FC = () => {
               />
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Tab: Media Image Gallery */}
-        {activeTab === 'gallery' && (
-          <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl">
-            <MediaImageGallery media={item} />
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* Recommendation & Similar Rows (Always presented for rich discovery)      */}
-        {/* ========================================================================= */}
-        {((item.recommendations && item.recommendations.length > 0) || (item.similar && item.similar.length > 0)) && (
-          <div className="space-y-10 pt-10 border-t border-white/10">
-            {/* 1. Recommended For You */}
-            {item.recommendations && item.recommendations.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold text-white">Recommended For You</h3>
-                      <p className="text-xs text-white/50">Curated by TMDB intelligence matching {item.title}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
-                  {item.recommendations.slice(0, 12).map((rec) => (
-                    <MediaCard key={`rec-${rec.id}`} media={rec} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 2. Similar Titles */}
-            {item.similar && item.similar.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
-                      <Film className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-bold text-white">Similar Titles & Franchise</h3>
-                      <p className="text-xs text-white/50">Sharing genre themes, directors, and cinematic tone</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
-                  {item.similar.slice(0, 12).map((sim) => (
-                    <MediaCard key={`sim-${sim.id}`} media={sim} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Curated Recommendations (Multi-Row Categorized Sliders - IMDb Style) */}
+        <div id="section-recommendations" className="scroll-mt-28 pt-8 border-t border-white/10">
+          <CuratedRecommendationRows type={item.type} id={String(item.id)} />
+        </div>
 
       </div>
 

@@ -159,13 +159,13 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
             <button
               onClick={() => {
                 onClose();
-                onNavTabChange?.('shows');
+                onNavTabChange?.('series' as any);
               }}
               className={`relative flex flex-col items-center py-1 text-sm font-medium transition-colors ${
                 item.type === 'tv' || item.type === 'anime' ? 'text-white font-bold' : 'text-white/70 hover:text-white'
               }`}
             >
-              <span>Shows</span>
+              <span>Series</span>
               {(item.type === 'tv' || item.type === 'anime') && (
                 <div className="absolute -bottom-1.5 h-1 w-1 rounded-full bg-orange-500 shadow-md shadow-orange-500/50" />
               )}

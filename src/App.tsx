@@ -10,11 +10,15 @@ import { AuthProvider } from './context/AuthContext';
 import { WatchlistProvider } from './context/WatchlistContext';
 import { TrailerProvider } from './context/TrailerContext';
 import { HistoryProvider } from './context/HistoryContext';
+import { CountryFilterProvider } from './context/CountryFilterContext';
+import { SoundtrackProvider } from './context/SoundtrackContext';
+import { FloatingSoundtrackBar } from './components/FloatingSoundtrackBar';
+import { SoundtrackModal } from './components/SoundtrackModal';
 
 // Pages
 import { HomePage } from './pages/HomePage';
 import { MoviesPage } from './pages/MoviesPage';
-import { ShowsPage } from './pages/ShowsPage';
+import { SeriesPage } from './pages/ShowsPage';
 import { ActorsPage } from './pages/ActorsPage';
 import { UpcomingPage } from './pages/UpcomingPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -47,13 +51,14 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/movies" element={<MoviesPage />} />
-          <Route path="/shows" element={<ShowsPage />} />
-          <Route path="/upcoming" element={<UpcomingPage />} />
+          <Route path="/series" element={<SeriesPage />} />
+          <Route path="/shows" element={<Navigate to="/series" replace />} />
+          <Route path="/upcoming" element={<LibraryPage defaultTab="upcoming" />} />
           <Route path="/actors" element={<ActorsPage />} />
           <Route path="/actors/:id" element={<ActorsPage />} />
           <Route path="/library" element={<LibraryPage />} />
-          <Route path="/watchlist" element={<LibraryPage />} />
-          <Route path="/history" element={<LibraryPage />} />
+          <Route path="/watchlist" element={<LibraryPage defaultTab="watchlist" />} />
+          <Route path="/history" element={<LibraryPage defaultTab="history" />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/gallery/:type/:id" element={<GalleryPage />} />
           <Route path="/details/:type/:id" element={<DetailsPage />} />
@@ -63,7 +68,11 @@ function AppContent() {
 
       {/* Global Modals */}
       <TrailerModal />
+      <SoundtrackModal />
       <AuthModal />
+
+      {/* Persistent Floating Soundtrack Audio Bar */}
+      <FloatingSoundtrackBar />
 
       {/* Global Periodical Footer */}
       <Footer />
@@ -75,15 +84,19 @@ export function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <WatchlistProvider>
-          <HistoryProvider>
-            <TrailerProvider>
-              <BrowserRouter>
-                <AppContent />
-              </BrowserRouter>
-            </TrailerProvider>
-          </HistoryProvider>
-        </WatchlistProvider>
+        <CountryFilterProvider>
+          <WatchlistProvider>
+            <HistoryProvider>
+              <TrailerProvider>
+                <SoundtrackProvider>
+                  <BrowserRouter>
+                    <AppContent />
+                  </BrowserRouter>
+                </SoundtrackProvider>
+              </TrailerProvider>
+            </HistoryProvider>
+          </WatchlistProvider>
+        </CountryFilterProvider>
       </AuthProvider>
     </ThemeProvider>
   );

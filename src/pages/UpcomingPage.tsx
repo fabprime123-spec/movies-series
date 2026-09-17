@@ -59,7 +59,7 @@ function useLiveCountdown(targetTimestamp: number) {
   return timeLeft;
 }
 
-export const UpcomingPage: React.FC = () => {
+export const UpcomingView: React.FC = () => {
   const navigate = useNavigate();
   const { playTrailer } = useTrailer();
   const { accentConfig } = useTheme();
@@ -621,3 +621,5 @@ export const UpcomingPage: React.FC = () => {
     </div>
   );
 };
+
+export const UpcomingPage = UpcomingView;

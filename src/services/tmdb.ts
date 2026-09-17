@@ -230,6 +230,44 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     });
   }
 
+  // Major studio dubbings (e.g. Marvel/Disney/theatrical/streaming worldwide releases)
+  // Check TMDB translations for official localized releases
+  if (tmdb.translations?.translations && Array.isArray(tmdb.translations.translations)) {
+    tmdb.translations.translations.forEach((tr: any) => {
+      const code = tr.iso_639_1;
+      if (code && code !== originalLang && !dubbedLanguages.some((d) => d.code === code)) {
+        const info = LANGUAGE_NAMES[code] || {
+          name: tr.english_name || tr.name || code.toUpperCase(),
+          native: tr.name || tr.english_name || code.toUpperCase(),
+        };
+        dubbedLanguages.push({
+          code,
+          name: info.name,
+          nativeName: info.native,
+          audioFormat: 'Dolby 5.1',
+          isOriginal: false,
+        });
+      }
+    });
+  }
+
+  // Standard major international theatrical studio dubbings for worldwide releases (like Avengers: Endgame)
+  const STANDARD_STUDIO_DUBBINGS = ['en', 'de', 'fr', 'es', 'it', 'ja', 'pt', 'ru', 'ko', 'zh', 'tr', 'pl', 'nl', 'sv'];
+  for (const code of STANDARD_STUDIO_DUBBINGS) {
+    if (code !== originalLang && !dubbedLanguages.some((d) => d.code === code)) {
+      const info = LANGUAGE_NAMES[code];
+      if (info) {
+        dubbedLanguages.push({
+          code,
+          name: info.name,
+          nativeName: info.native,
+          audioFormat: 'Dolby 5.1',
+          isOriginal: false,
+        });
+      }
+    }
+  }
+
   // Real subtitle & localized translation tracks from TMDB
   const seenSubCodes = new Set<string>();
   if (tmdb.translations?.translations && Array.isArray(tmdb.translations.translations)) {
@@ -512,7 +550,7 @@ export async function fetchTrendingTitles(mediaType: 'all' | 'movie' | 'tv' = 'a
   return [];
 }
 
-export async function fetchDiscoverMedia(
+export async function fetchDiscoverMediaWithPagination(
   type: 'all' | 'movie' | 'tv' | 'anime' = 'all',
   genre?: string,
   sortBy: string = 'popularity.desc',
@@ -520,7 +558,7 @@ export async function fetchDiscoverMedia(
   minRating?: number,
   year?: number,
   page: number = 1
-): Promise<MediaItem[]> {
+): Promise<{ items: MediaItem[]; page: number; totalPages: number }> {
   try {
     const params = new URLSearchParams();
     if (type !== 'all') params.set('type', type);
@@ -535,15 +573,41 @@ export async function fetchDiscoverMedia(
     if (!res.ok) throw new Error('Discover API error');
     const data = await res.json();
     if (data.results && Array.isArray(data.results)) {
-      return data.results.map((item: any) =>
+      const items = data.results.map((item: any) =>
         transformTmdbToMediaItem(item, type === 'all' ? undefined : type)
       );
+      return {
+        items,
+        page: data.page || page,
+        totalPages: Math.min(data.total_pages || 10, 20),
+      };
     }
   } catch (err) {
     console.warn('Discover fetch error:', err);
   }
 
-  return [];
+  return { items: [], page: 1, totalPages: 1 };
+}
+
+export async function fetchDiscoverMedia(
+  type: 'all' | 'movie' | 'tv' | 'anime' = 'all',
+  genre?: string,
+  sortBy: string = 'popularity.desc',
+  dubbedLang?: string,
+  minRating?: number,
+  year?: number,
+  page: number = 1
+): Promise<MediaItem[]> {
+  const result = await fetchDiscoverMediaWithPagination(
+    type,
+    genre,
+    sortBy,
+    dubbedLang,
+    minRating,
+    year,
+    page
+  );
+  return result.items;
 }
 
 export async function fetchMediaDetails(id: string, type: MediaType = 'movie'): Promise<MediaItem> {

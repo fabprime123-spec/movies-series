@@ -285,7 +285,7 @@ export const SearchPage: React.FC = () => {
           {[
             { id: 'all', label: 'All Media', icon: Sparkles },
             { id: 'movie', label: 'Movies', icon: Film },
-            { id: 'tv', label: 'TV Shows', icon: Tv },
+            { id: 'tv', label: 'Series', icon: Tv },
             { id: 'anime', label: 'Anime', icon: Sparkles },
             { id: 'actors', label: 'Actors & Cast', icon: Users },
           ].map((tab) => {

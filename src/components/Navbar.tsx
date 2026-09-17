@@ -4,8 +4,7 @@ import {
   Search, 
   User, 
   LogOut, 
-  Menu, 
-  X,
+  Menu,
   Clapperboard,
   History,
   Sun,
@@ -20,6 +19,7 @@ import { useTheme } from '../context/ThemeContext';
 import { AccentColor } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { NavbarDrawer } from './NavbarDrawer';
 
 interface NavItem {
   path: string;
@@ -42,8 +42,7 @@ export const Navbar: React.FC = () => {
   const navItems: NavItem[] = [
     { path: '/', id: 'home', label: 'Home' },
     { path: '/movies', id: 'movies', label: 'Movies' },
-    { path: '/shows', id: 'shows', label: 'Shows' },
-    { path: '/upcoming', id: 'upcoming', label: 'Upcoming' },
+    { path: '/series', id: 'series', label: 'Series' },
     { path: '/actors', id: 'actors', label: 'Actors' },
     { path: '/library', id: 'library', label: 'Library' },
   ];
@@ -53,7 +52,7 @@ export const Navbar: React.FC = () => {
   const totalLibraryCount = watchlist.length + history.length;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-white/10 backdrop-blur-xl bg-white/85 dark:bg-[#0c0d12]/85 transition-colors duration-300">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-white/10 backdrop-blur-xl bg-white/75 dark:bg-[#0c0d12]/75 transition-colors duration-300">
       <div className="w-full px-4 sm:px-8 lg:px-12 py-3.5">
         <div className="flex items-center justify-between gap-6">
           
@@ -263,7 +262,8 @@ export const Navbar: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.95, y: -10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141620] p-2 shadow-2xl backdrop-blur-2xl z-50 text-slate-900 dark:text-white"
+                      style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
+                      className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200/80 dark:border-white/15 bg-white/70 dark:bg-[#141620]/75 p-2 shadow-2xl z-50 text-slate-900 dark:text-white transform-gpu will-change-transform"
                     >
                       <div className="px-3 py-2 border-b border-slate-100 dark:border-white/10">
                         <p className="text-xs font-medium text-slate-400 dark:text-white/50">Signed in as</p>
@@ -321,95 +321,24 @@ export const Navbar: React.FC = () => {
               </button>
             )}
 
-            {/* Mobile Menu Toggle */}
+            {/* Mobile / Menu Drawer Toggle */}
             <button
               id="mobile-menu-toggle"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => setIsMobileMenuOpen(true)}
               className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10"
-              aria-label="Toggle Menu"
+              aria-label="Open Navigation Drawer"
             >
-              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              <Menu className="h-4 w-4" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="md:hidden border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c0d12] px-4 py-4"
-          >
-            <div className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    navigate(item.path);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
-                    currentPath === item.path
-                      ? `${accentConfig.badgeBg} ${accentConfig.badgeText} font-bold`
-                      : 'text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {item.id === 'library' && totalLibraryCount > 0 && (
-                    <span className={`rounded-full bg-gradient-to-r ${accentConfig.gradient} px-2 py-0.5 text-xs font-bold text-white`}>
-                      {totalLibraryCount}
-                    </span>
-                  )}
-                </button>
-              ))}
-
-              <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-white/10 mt-1">
-                <span className="text-xs text-slate-500 dark:text-white/50 font-medium">Theme Mode</span>
-                <button
-                  onClick={toggleTheme}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-xs font-bold text-slate-800 dark:text-white border border-slate-200 dark:border-white/10"
-                >
-                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-700" />}
-                  <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-                </button>
-              </div>
-
-              <div className="pt-2">
-                <span className="text-xs text-slate-500 dark:text-white/50 font-medium block mb-2">Accent Theme</span>
-                <div className="grid grid-cols-6 gap-2">
-                  {availableAccents.map((acc) => (
-                    <button
-                      key={acc.id}
-                      onClick={() => setAccentColor(acc.id as AccentColor)}
-                      className={`h-8 rounded-xl flex items-center justify-center border transition-all ${
-                        accentColor === acc.id ? 'border-slate-800 dark:border-white scale-105 shadow-sm' : 'border-transparent'
-                      }`}
-                      style={{ backgroundColor: acc.primary }}
-                      title={acc.label}
-                    >
-                      {accentColor === acc.id && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  navigate('/search');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-white/80 hover:text-slate-900 dark:hover:text-white mt-2"
-              >
-                <Search className={`h-4 w-4 ${accentConfig.badgeText}`} />
-                <span>Search Titles, Actors, Directors</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Shadcn-style Drawer for Navigation */}
+      <NavbarDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
     </header>
   );
 };
