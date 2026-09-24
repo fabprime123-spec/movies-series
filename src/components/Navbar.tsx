@@ -52,7 +52,7 @@ export const Navbar: React.FC = () => {
   const totalLibraryCount = watchlist.length + history.length;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-white/10 backdrop-blur-xl bg-white/75 dark:bg-[#0c0d12]/75 transition-colors duration-300">
+    <header className="sticky top-0 z-50 w-full border-b border-border backdrop-blur-xl bg-background/80 transition-colors duration-300">
       <div className="w-full px-4 sm:px-8 lg:px-12 py-3.5">
         <div className="flex items-center justify-between gap-6">
           
@@ -66,7 +66,7 @@ export const Navbar: React.FC = () => {
               <Clapperboard className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-['Outfit',sans-serif] text-lg font-extrabold tracking-tight text-slate-900 dark:text-white transition-colors">
+              <span className="font-['Outfit',sans-serif] text-lg font-extrabold tracking-tight text-foreground transition-colors">
                 Movieace
               </span>
             </div>
@@ -86,8 +86,8 @@ export const Navbar: React.FC = () => {
                   to={item.path}
                   className={`relative flex flex-col items-center py-1 text-sm font-medium transition-colors duration-200 ${
                     isActive
-                      ? 'text-slate-900 dark:text-white font-bold'
-                      : 'text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white'
+                      ? 'text-foreground font-bold'
+                      : 'text-muted hover:text-foreground'
                   }`}
                 >
                   <span className="flex items-center gap-1.5">
@@ -119,13 +119,13 @@ export const Navbar: React.FC = () => {
               className={`flex items-center gap-2 sm:gap-2.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs transition-all duration-200 border ${
                 isSearchActive
                   ? `${accentConfig.badgeBg} border-current ${accentConfig.badgeText} shadow-sm`
-                  : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'
+                  : 'bg-surface border-border text-muted hover:text-foreground hover:bg-card'
               }`}
               title="Open Cinema Search (Ctrl+K)"
             >
               <Search className={`h-4 w-4 sm:h-3.5 sm:w-3.5 ${accentConfig.badgeText}`} />
               <span className="hidden sm:inline font-medium">Search</span>
-              <kbd className="hidden lg:inline-flex rounded bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 text-[10px] text-slate-500 dark:text-white/50 font-mono border border-slate-300 dark:border-white/10">Ctrl+K</kbd>
+              <kbd className="hidden lg:inline-flex rounded bg-card px-1.5 py-0.5 text-[10px] text-muted font-mono border border-border">Ctrl+K</kbd>
             </button>
 
             {/* Accent Color Picker Popover (Desktop / Tablet) */}
@@ -133,11 +133,11 @@ export const Navbar: React.FC = () => {
               <button
                 id="accent-palette-picker-btn"
                 onClick={() => setShowPaletteMenu(!showPaletteMenu)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-muted hover:text-foreground hover:bg-card transition-colors"
                 title="Customize Accent Color Theme"
               >
                 <div 
-                  className="w-4 h-4 rounded-full border border-white/40 shadow-sm" 
+                  className="w-4 h-4 rounded-full border border-border shadow-sm" 
                   style={{ backgroundColor: accentConfig.primary }} 
                 />
               </button>
@@ -148,14 +148,14 @@ export const Navbar: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.95, y: -8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                    className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#141620] p-3 shadow-2xl backdrop-blur-2xl z-50"
+                    className="absolute right-0 mt-2 w-64 max-h-80 overflow-y-auto rounded-2xl border border-border bg-card p-3 shadow-2xl backdrop-blur-2xl z-50 scrollbar-none"
                   >
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-white/40 mb-2 px-1 flex items-center justify-between">
-                      <span>Accent Color</span>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-muted mb-2 px-1 flex items-center justify-between">
+                      <span>Accent Color (14 Themes)</span>
                       <Palette className="w-3.5 h-3.5" />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {availableAccents.map((acc) => (
                         <button
                           key={acc.id}
@@ -163,21 +163,21 @@ export const Navbar: React.FC = () => {
                             setAccentColor(acc.id as AccentColor);
                             setShowPaletteMenu(false);
                           }}
-                          className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all ${
+                          className={`flex items-center gap-2 p-1.5 rounded-xl border transition-all ${
                             accentColor === acc.id
-                              ? 'border-slate-800 dark:border-white bg-slate-100 dark:bg-white/10 shadow-sm'
-                              : 'border-transparent hover:bg-slate-50 dark:hover:bg-white/5'
+                              ? 'border-accent bg-accent/15 text-accent shadow-sm'
+                              : 'border-transparent hover:bg-surface text-muted hover:text-foreground'
                           }`}
                         >
                           <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center shadow-md relative"
+                            className="w-4 h-4 shrink-0 rounded-full flex items-center justify-center shadow-sm relative"
                             style={{ backgroundColor: acc.primary }}
                           >
                             {accentColor === acc.id && (
-                              <Check className="w-3 h-3 text-white stroke-[3]" />
+                              <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
                             )}
                           </div>
-                          <span className="text-[10px] font-medium text-slate-700 dark:text-white/80">
+                          <span className="text-[11px] font-medium truncate">
                             {acc.label.split(' ')[0]}
                           </span>
                         </button>
@@ -192,13 +192,13 @@ export const Navbar: React.FC = () => {
             <button
               id="theme-toggle-btn"
               onClick={toggleTheme}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-foreground hover:bg-card transition-colors"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-amber-400 hover:rotate-45 transition-transform" />
+                <Sun className="h-4 w-4 text-accent hover:rotate-45 transition-transform" />
               ) : (
-                <Moon className="h-4 w-4 text-slate-700 hover:-rotate-12 transition-transform" />
+                <Moon className="h-4 w-4 text-foreground hover:-rotate-12 transition-transform" />
               )}
             </button>
 
@@ -209,7 +209,7 @@ export const Navbar: React.FC = () => {
               className={`hidden sm:flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200 ${
                 currentPath === '/watchlist'
                   ? `${accentConfig.badgeBg} border-current ${accentConfig.badgeText} shadow-sm`
-                  : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10'
+                  : 'border-border bg-surface text-muted hover:text-foreground hover:bg-card'
               }`}
               aria-label="View Watchlist"
             >
@@ -223,7 +223,7 @@ export const Navbar: React.FC = () => {
               className={`hidden sm:flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200 ${
                 currentPath === '/history'
                   ? `${accentConfig.badgeBg} border-current ${accentConfig.badgeText} shadow-sm`
-                  : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10'
+                  : 'border-border bg-surface text-muted hover:text-foreground hover:bg-card'
               }`}
               aria-label="View History"
               title="Viewing History"
@@ -237,12 +237,12 @@ export const Navbar: React.FC = () => {
                 <button
                   id="user-profile-menu-btn"
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
-                  className={`flex items-center gap-2 rounded-xl border ${accentConfig.badgeBg} border-current/30 p-1 pr-2.5 text-xs font-medium text-slate-900 dark:text-white hover:opacity-90 transition-all`}
+                  className={`flex items-center gap-2 rounded-xl border ${accentConfig.badgeBg} border-current/30 p-1 pr-2.5 text-xs font-medium text-foreground hover:opacity-90 transition-all`}
                 >
                   <img
                     src={currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`}
                     alt="avatar"
-                    className="h-6 w-6 rounded-lg object-cover bg-slate-300 dark:bg-white/10"
+                    className="h-6 w-6 rounded-lg object-cover bg-surface"
                   />
                   <span className="max-w-[80px] truncate hidden sm:inline">{currentUser.displayName || 'User'}</span>
                   {isSyncing ? (
@@ -263,12 +263,12 @@ export const Navbar: React.FC = () => {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' }}
-                      className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200/80 dark:border-white/15 bg-white/70 dark:bg-[#141620]/75 p-2 shadow-2xl z-50 text-slate-900 dark:text-white transform-gpu will-change-transform"
+                      className="absolute right-0 mt-2 w-56 rounded-2xl border border-border bg-card/95 p-2 shadow-2xl z-50 text-foreground transform-gpu will-change-transform"
                     >
-                      <div className="px-3 py-2 border-b border-slate-100 dark:border-white/10">
-                        <p className="text-xs font-medium text-slate-400 dark:text-white/50">Signed in as</p>
+                      <div className="px-3 py-2 border-b border-border">
+                        <p className="text-xs font-medium text-muted">Signed in as</p>
                         <p className="text-sm font-semibold truncate">{currentUser.displayName || currentUser.email}</p>
-                        <p className="text-[10px] text-emerald-500 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+                        <p className="text-[10px] text-emerald-500 flex items-center gap-1 mt-0.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                           Cloud Sync Active
                         </p>
@@ -279,9 +279,9 @@ export const Navbar: React.FC = () => {
                           setShowUserDropdown(false);
                           navigate('/watchlist');
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted hover:text-foreground hover:bg-surface rounded-xl transition-all"
                       >
-                        <Bookmark className="h-3.5 w-3.5 text-orange-400" />
+                        <Bookmark className="h-3.5 w-3.5 text-accent" />
                         My Cinema Watchlist ({watchlist.length})
                       </button>
 
@@ -290,9 +290,9 @@ export const Navbar: React.FC = () => {
                           setShowUserDropdown(false);
                           navigate('/history');
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-all"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted hover:text-foreground hover:bg-surface rounded-xl transition-all"
                       >
-                        <History className="h-3.5 w-3.5 text-orange-400" />
+                        <History className="h-3.5 w-3.5 text-accent" />
                         Viewing History ({history.length})
                       </button>
 
@@ -325,7 +325,7 @@ export const Navbar: React.FC = () => {
             <button
               id="mobile-menu-toggle"
               onClick={() => setIsMobileMenuOpen(true)}
-              className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10"
+              className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-foreground hover:bg-card"
               aria-label="Open Navigation Drawer"
             >
               <Menu className="h-4 w-4" />

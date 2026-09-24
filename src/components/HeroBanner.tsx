@@ -86,12 +86,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
   return (
     <section 
-      className="relative w-full overflow-hidden border border-white/10 shadow-2xl transition-all"
+      className="relative w-full overflow-hidden transition-all"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Background Backdrop Image with Crossfade */}
-      <div className="relative h-[480px] sm:h-[560px] md:h-[620px] w-full overflow-hidden bg-slate-950">
+      <div className="relative h-[480px] sm:h-[600px] md:h-[720px] w-full overflow-hidden bg-card">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentItem.id}
@@ -128,19 +128,19 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             >
               {/* Minimalist Metadata Pill */}
               <div className="flex items-center gap-2">
-                <span className="flex items-center gap-2 rounded-full bg-black/50 px-3.5 py-1 text-xs font-medium text-white/90 backdrop-blur-md border border-white/15 shadow-sm">
-                  <span className="flex items-center gap-1 font-bold text-amber-400">
+                <span className="flex items-center gap-2 rounded-full bg-transparent px-3.5 py-1 text-xs font-medium text-foreground backdrop-blur-md border border-border/10 shadow-sm">
+                  <span className="flex items-center gap-1 font-bold text-amber-400 text-shadow-2xl">
                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                     {(currentItem.ratings?.imdb ?? 0).toFixed(1)}
                   </span>
-                  <span className="text-white/30">•</span>
+                  <span>•</span>
                   <span>{currentItem.releaseYear}</span>
-                  <span className="text-white/30">•</span>
-                  <span className="text-white/80">{currentItem.type === 'tv' ? 'Series' : currentItem.genres?.[0] || 'Cinema'}</span>
+                  <span>•</span>
+                  <span>{currentItem.type === 'tv' ? 'Series' : currentItem.genres?.[0] || 'Cinema'}</span>
                   {currentItem.runtimeMinutes && (
                     <>
-                      <span className="text-white/30">•</span>
-                      <span className="text-white/70">{Math.floor(currentItem.runtimeMinutes / 60)}h {currentItem.runtimeMinutes % 60}m</span>
+                      <span>•</span>
+                      <span>{Math.floor(currentItem.runtimeMinutes / 60)}h {currentItem.runtimeMinutes % 60}m</span>
                     </>
                   )}
                 </span>
@@ -148,18 +148,18 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
               {/* Title & Concise Logline */}
               <div className="space-y-2">
-                <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-md leading-tight">
+                <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground drop-shadow-md leading-tight">
                   {currentItem.title}
                 </h1>
                 {currentItem.tagline && (
-                  <p className="text-sm sm:text-base font-serif italic text-amber-200/90 line-clamp-1">
+                  <p className="text-sm sm:text-base font-serif italic text-colored line-clamp-1 text-shadow-2xl">
                     "{currentItem.tagline}"
                   </p>
                 )}
               </div>
 
               {/* Overview snippet - concise */}
-              <p className="line-clamp-2 text-xs sm:text-sm text-white/80 leading-relaxed max-w-xl">
+              <p className="line-clamp-2 text-xs sm:text-sm text-muted leading-relaxed max-w-xl font-bold">
                 {currentItem.overview}
               </p>
 
@@ -168,7 +168,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <button
                   id={`hero-play-trailer-${currentItem.id}`}
                   onClick={handleTrailerClick}
-                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-95 px-5 sm:px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-xl hover:scale-102 active:scale-98 transition-all`}
+                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-95 px-5 sm:px-6 py-3 text-xs sm:text-sm font-bold text-white hover:scale-102 active:scale-98 transition-all`}
                 >
                   <Play className="h-4 w-4 fill-white" />
                   <span>Watch Trailer</span>
@@ -177,7 +177,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                 <button
                   id={`hero-view-details-${currentItem.id}`}
                   onClick={handleDetailsClick}
-                  className="flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-white border border-white/15 transition-all active:scale-98"
+                  className="flex items-center gap-2 rounded-2xl bg-muted hover:bg-muted/60 backdrop-blur-md px-5 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-white border border-white/15 transition-all active:scale-98"
                 >
                   <Info className="h-4 w-4" />
                   <span>Details</span>

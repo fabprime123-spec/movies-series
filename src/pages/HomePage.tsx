@@ -160,7 +160,7 @@ export const HomePage: React.FC = () => {
           ) : (
             <div
               ref={trendingScrollRef}
-              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory py-4 px-4 sm:px-8 lg:px-12 carousel-contain"
+              className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-none py-4 px-8 sm:px-12 lg:px-16 "
             >
               {filteredTrending.slice(0, 15).map((item, index) => {
                 const rank = index + 1;

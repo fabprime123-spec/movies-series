@@ -12,4 +12,18 @@ export interface UserProfile {
   isAnonymous: boolean;
 }
 
-export type AccentColor = 'orange' | 'crimson' | 'emerald' | 'indigo' | 'cyan' | 'amber';
+export type AccentColor =
+  | 'orange'
+  | 'crimson'
+  | 'emerald'
+  | 'indigo'
+  | 'cyan'
+  | 'amber'
+  | 'rose'
+  | 'purple'
+  | 'blue'
+  | 'teal'
+  | 'lime'
+  | 'fuchsia'
+  | 'sky'
+  | 'yellow';

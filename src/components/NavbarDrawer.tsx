@@ -93,24 +93,24 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-          className="relative z-10 flex max-h-[88vh] w-full flex-col rounded-t-[28px] border-t border-slate-200 dark:border-white/15 bg-white dark:bg-[#0e1018] shadow-2xl overflow-hidden text-slate-900 dark:text-white"
+          className="relative z-10 flex max-h-[88vh] w-full flex-col rounded-t-[28px] border-t border-border bg-card shadow-2xl overflow-hidden text-foreground"
         >
           {/* Drag Handle Bar (Shadcn signature) */}
           <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing">
-            <div className="h-1.5 w-12 rounded-full bg-slate-300 dark:bg-white/20 hover:bg-slate-400 dark:hover:bg-white/30 transition-colors" />
+            <div className="h-1.5 w-12 rounded-full bg-muted/40 hover:bg-muted/60 transition-colors" />
           </div>
 
           {/* Drawer Header */}
-          <div className="px-6 pt-2 pb-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+          <div className="px-6 pt-2 pb-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${accentConfig.gradient} flex items-center justify-center text-white shadow-md`}>
                 <Clapperboard className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-['Outfit',sans-serif] text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="font-['Outfit',sans-serif] text-base font-bold text-foreground">
                   Movieace Navigation
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-white/50">
+                <p className="text-xs text-muted">
                   Discover movies, series, stars & custom collections
                 </p>
               </div>
@@ -118,7 +118,7 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
 
             <button
               onClick={onClose}
-              className="h-8 w-8 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+              className="h-8 w-8 rounded-xl flex items-center justify-center bg-surface text-muted hover:text-foreground hover:bg-surface/80 transition-colors"
               title="Close drawer (ESC)"
             >
               <X className="w-4 h-4" />
@@ -134,13 +134,13 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
                   onClose();
                   navigate('/search');
                 }}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-all text-xs font-medium group"
+                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-surface border border-border text-muted hover:bg-surface/80 hover:text-foreground transition-all text-xs font-medium group"
               >
                 <span className="flex items-center gap-2.5">
                   <Search className={`w-4 h-4 ${accentConfig.badgeText}`} />
                   <span>Search cinema, actors, directors, genres...</span>
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-white/50 font-mono">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-card text-muted font-mono">
                   Ctrl+K
                 </span>
               </button>
@@ -148,7 +148,7 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
 
             {/* Main Navigation Links */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-white/40 block px-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-muted block px-1">
                 Explore Categories
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -168,7 +168,7 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
                       className={`flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-semibold transition-all ${
                         isActive
                           ? `${accentConfig.badgeBg} ${accentConfig.badgeText} font-bold shadow-sm border border-current/20`
-                          : 'bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white border border-transparent'
+                          : 'bg-surface text-muted hover:bg-surface/80 hover:text-foreground border border-transparent'
                       }`}
                     >
                       <span className="flex items-center gap-3">
@@ -196,10 +196,10 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
                 className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
                   currentPath === '/watchlist'
                     ? `${accentConfig.badgeBg} border-current ${accentConfig.badgeText}`
-                    : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10'
+                    : 'border-border bg-surface text-muted hover:text-foreground hover:bg-surface/80'
                 }`}
               >
-                <Bookmark className="w-4 h-4 text-orange-400" />
+                <Bookmark className="w-4 h-4 text-accent" />
                 <span>Watchlist ({watchlist.length})</span>
               </button>
 
@@ -211,47 +211,47 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
                 className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
                   currentPath === '/history'
                     ? `${accentConfig.badgeBg} border-current ${accentConfig.badgeText}`
-                    : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10'
+                    : 'border-border bg-surface text-muted hover:text-foreground hover:bg-surface/80'
                 }`}
               >
-                <History className="w-4 h-4 text-orange-400" />
+                <History className="w-4 h-4 text-accent" />
                 <span>History ({history.length})</span>
               </button>
             </div>
 
             {/* Theme & Palette Controls */}
-            <div className="pt-2 border-t border-slate-100 dark:border-white/10 space-y-3">
+            <div className="pt-2 border-t border-border space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sun className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-semibold text-slate-700 dark:text-white/80">Appearance Mode</span>
+                  <Sun className="w-4 h-4 text-accent" />
+                  <span className="text-xs font-semibold text-foreground">Appearance Mode</span>
                 </div>
                 <button
                   onClick={toggleTheme}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-xs font-bold text-slate-800 dark:text-white border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface text-xs font-bold text-foreground border border-border hover:bg-surface/80 transition-colors"
                 >
-                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-700" />}
+                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-accent" /> : <Moon className="w-3.5 h-3.5 text-foreground" />}
                   <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
                 </button>
               </div>
 
               <div>
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-white/80 mb-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-foreground mb-2">
                   <span className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-orange-400" />
-                    <span>Accent Theme</span>
+                    <Palette className="w-4 h-4 text-accent" />
+                    <span>Accent Theme (14 Colors)</span>
                   </span>
-                  <span className="text-[11px] text-slate-400 dark:text-white/40 capitalize">{accentColor}</span>
+                  <span className="text-[11px] text-muted capitalize">{accentColor}</span>
                 </div>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-7 gap-2">
                   {availableAccents.map((acc) => (
                     <button
                       key={acc.id}
                       onClick={() => setAccentColor(acc.id as AccentColor)}
                       className={`h-9 rounded-xl flex items-center justify-center border transition-all ${
                         accentColor === acc.id
-                          ? 'border-slate-800 dark:border-white scale-105 shadow-md'
-                          : 'border-transparent hover:scale-102'
+                          ? 'border-foreground ring-2 ring-accent scale-105 shadow-md'
+                          : 'border-transparent hover:scale-105'
                       }`}
                       style={{ backgroundColor: acc.primary }}
                       title={acc.label}
@@ -266,17 +266,17 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
             </div>
 
             {/* User Account / Profile Section in Drawer */}
-            <div className="pt-2 border-t border-slate-100 dark:border-white/10">
+            <div className="pt-2 border-t border-border">
               {currentUser ? (
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-border">
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`}
                       alt="avatar"
-                      className="w-8 h-8 rounded-xl object-cover bg-slate-300 dark:bg-white/10"
+                      className="w-8 h-8 rounded-xl object-cover bg-card"
                     />
                     <div className="min-w-0">
-                      <p className="text-xs font-bold truncate text-slate-900 dark:text-white">{currentUser.displayName || 'User'}</p>
+                      <p className="text-xs font-bold truncate text-foreground">{currentUser.displayName || 'User'}</p>
                       <p className="text-[10px] text-emerald-500 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         Cloud Sync Active
@@ -311,11 +311,11 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
           </div>
 
           {/* Drawer Footer */}
-          <div className="px-6 py-3 border-t border-slate-100 dark:border-white/10 flex items-center justify-between bg-slate-50/50 dark:bg-black/20 text-xs text-slate-400 dark:text-white/40">
+          <div className="px-6 py-3 border-t border-border flex items-center justify-between bg-surface/50 text-xs text-muted">
             <span>Movieace Streaming Cinema</span>
             <button
               onClick={onClose}
-              className="text-xs font-semibold text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white"
+              className="text-xs font-semibold text-muted hover:text-foreground"
             >
               Done
             </button>

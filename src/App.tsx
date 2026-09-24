@@ -42,7 +42,7 @@ function AppContent() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-orange-500 selection:text-white transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-accent selection:text-white transition-colors duration-300">
       {/* Navigation Header */}
       <Navbar />
 
