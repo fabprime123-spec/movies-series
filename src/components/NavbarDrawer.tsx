@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   Search, 
@@ -69,6 +68,7 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
     { label: 'Home', path: '/', icon: Clapperboard, count: null },
     { label: 'Movies', path: '/movies', icon: Film, count: null },
     { label: 'Series', path: '/series', icon: Tv, count: null },
+    { label: 'Seasons', path: '/season', icon: Sparkles, count: null },
     { label: 'Actors', path: '/actors', icon: Users, count: null },
     { label: 'Library', path: '/library', icon: Bookmark, count: totalLibraryCount },
   ];
@@ -76,25 +76,17 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
   if (!isOpen) return null;
 
   const drawerContent = (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex flex-col justify-end select-none">
-        {/* Backdrop overlay */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/65 backdrop-blur-md transition-opacity"
-        />
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end select-none">
+      {/* Backdrop overlay */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/65 backdrop-blur-md transition-opacity duration-300"
+      />
 
-        {/* Shadcn Drawer Container (Bottom Sheet with rounded top & handle) */}
-        <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-          className="relative z-10 flex max-h-[88vh] w-full flex-col rounded-t-[28px] border-t border-border bg-card shadow-2xl overflow-hidden text-foreground"
-        >
+      {/* Shadcn Drawer Container (Bottom Sheet with rounded top & handle) */}
+      <div
+        className="relative z-10 flex max-h-[88vh] w-full flex-col rounded-t-[28px] border-t border-border bg-card shadow-2xl overflow-hidden text-foreground transition-transform duration-300 transform translate-y-0"
+      >
           {/* Drag Handle Bar (Shadcn signature) */}
           <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing">
             <div className="h-1.5 w-12 rounded-full bg-muted/40 hover:bg-muted/60 transition-colors" />
@@ -320,9 +312,8 @@ export const NavbarDrawer: React.FC<NavbarDrawerProps> = ({ isOpen, onClose }) =
               Done
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </AnimatePresence>
   );
 
   return createPortal(drawerContent, document.body);

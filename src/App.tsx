@@ -25,6 +25,7 @@ import { LibraryPage } from './pages/LibraryPage';
 import { GalleryPage } from './pages/GalleryPage';
 import { SearchPage } from './pages/SearchPage';
 import { DetailsPage } from './pages/DetailsPage';
+import { SeasonPage } from './pages/SeasonPage';
 
 function AppContent() {
   const navigate = useNavigate();
@@ -62,6 +63,9 @@ function AppContent() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/gallery/:type/:id" element={<GalleryPage />} />
           <Route path="/details/:type/:id" element={<DetailsPage />} />
+          <Route path="/season" element={<SeasonPage />} />
+          <Route path="/season/:type/:id" element={<SeasonPage />} />
+          <Route path="/season/:type/:id/:seasonNumber" element={<SeasonPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -16,7 +16,7 @@ export const ComposerSpotlight: React.FC<ComposerSpotlightProps> = ({ composers 
     <div className="space-y-4 px-4 sm:px-8 lg:px-12">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
+          <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
             <Music className="w-5 h-5" />
           </div>
           <div>
@@ -24,7 +24,7 @@ export const ComposerSpotlight: React.FC<ComposerSpotlightProps> = ({ composers 
               <h3 className="text-lg sm:text-xl font-bold font-['Outfit',sans-serif] text-white">
                 Composer & Sound Department
               </h3>
-              <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+              <span className="text-[10px] font-bold text-accent uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
                 Score & Acoustics
               </span>
             </div>
@@ -38,7 +38,7 @@ export const ComposerSpotlight: React.FC<ComposerSpotlightProps> = ({ composers 
             onClick={onPlaySoundtrack}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/80 transition-all active:scale-95"
           >
-            <Headphones className="w-3.5 h-3.5 text-orange-400" />
+            <Headphones className="w-3.5 h-3.5 text-accent" />
             <span>Soundtrack</span>
           </button>
         )}
@@ -59,12 +59,12 @@ export const ComposerSpotlight: React.FC<ComposerSpotlightProps> = ({ composers 
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Music className="w-5 h-5 text-orange-400" />
+                <Music className="w-5 h-5 text-accent" />
               )}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white truncate">{comp.name}</p>
-              <p className="text-xs text-orange-400 flex items-center gap-1">
+              <p className="text-xs text-accent flex items-center gap-1">
                 <Volume2 className="w-3 h-3" />
                 <span>{comp.role || 'Original Score Composer'}</span>
               </p>

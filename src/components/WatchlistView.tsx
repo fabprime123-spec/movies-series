@@ -20,7 +20,6 @@ import {
 import { MediaItem, WatchlistItem, WatchlistStatus } from '../types';
 import { useWatchlist } from '../context/WatchlistContext';
 import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence } from 'motion/react';
 
 interface WatchlistViewProps {
   onOpenDetails: (item: MediaItem) => void;
@@ -207,13 +206,9 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
       {filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredItems.map((item) => (
-            <motion.div
-              layout
+            <div
               key={item.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl shadow-lg hover:border-indigo-500/40 transition-all"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl shadow-lg hover:border-indigo-500/40 transition-all duration-200 transform hover:scale-[1.01]"
             >
               <div className="flex gap-3.5">
                 {/* Poster image */}
@@ -319,7 +314,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       ) : (

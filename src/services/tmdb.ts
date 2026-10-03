@@ -1,4 +1,5 @@
 import { MediaItem, MediaType, CastMember, CrewMember, Season, Episode, LanguageTrack, SubtitleTrack, StreamingProvider, ActorItem, GalleryImages, MediaImage, UpcomingItem, MediaVideo } from '../types';
+import { sortVideosByOfficialTrailerFirst } from '../utils/trailerSorter';
 
 const GENRE_MAP: Record<number, string> = {
   28: 'Action',
@@ -71,11 +72,19 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     (Array.isArray(tmdb.genre_ids) && tmdb.genre_ids.includes(16) && tmdb.original_language === 'ja') ||
     (Array.isArray(tmdb.genres) && tmdb.genres.some((g: any) => g.name === 'Animation' || g.id === 16) && tmdb.original_language === 'ja');
 
-  const detectedType: MediaType = overrideType
-    ? overrideType
-    : isAnime
+  // Reliably distinguish between TV series and standalone feature films (including anime movies)
+  const isTvShow = Boolean(
+    tmdb.first_air_date ||
+    tmdb.number_of_seasons !== undefined ||
+    tmdb.media_type === 'tv' ||
+    (Array.isArray(tmdb.seasons) && tmdb.seasons.length > 0)
+  );
+
+  const detectedType: MediaType = isAnime
     ? 'anime'
-    : tmdb.first_air_date || tmdb.media_type === 'tv'
+    : isTvShow
+    ? 'tv'
+    : overrideType === 'tv' && !tmdb.title
     ? 'tv'
     : 'movie';
 
@@ -109,18 +118,10 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
         });
       });
 
-    // Sort: Official Trailers first, then Trailers, then Teasers, then others
-    videos.sort((a, b) => {
-      const rank = (item: MediaVideo) => {
-        if (item.type === 'Trailer' && item.official) return 0;
-        if (item.type === 'Trailer') return 1;
-        if (item.type === 'Teaser' && item.official) return 2;
-        if (item.type === 'Teaser') return 3;
-        if (item.type === 'Clip') return 4;
-        return 5;
-      };
-      return rank(a) - rank(b);
-    });
+    // Sort videos: Official Trailer first, then other trailers, then teasers, then others
+    const sorted = sortVideosByOfficialTrailerFirst(videos);
+    videos.length = 0;
+    videos.push(...sorted);
   }
 
   // Extract Trailer Youtube ID (first trailer in sorted videos list)
@@ -195,6 +196,8 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
   // Dubbed & Subtitled Languages from real TMDB spoken_languages & translations
   const dubbedLanguages: LanguageTrack[] = [];
   const subtitledLanguages: SubtitleTrack[] = [];
+  const seenDubCodes = new Set<string>();
+  const seenSubCodes = new Set<string>();
 
   const originalLang = tmdb.original_language || 'en';
   const origInfo = LANGUAGE_NAMES[originalLang] || {
@@ -202,6 +205,7 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     native: originalLang.toUpperCase(),
   };
 
+  seenDubCodes.add(originalLang);
   dubbedLanguages.push({
     code: originalLang,
     name: origInfo.name,
@@ -214,7 +218,8 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
   if (Array.isArray(tmdb.spoken_languages)) {
     tmdb.spoken_languages.forEach((lang: any) => {
       const code = lang.iso_639_1;
-      if (code && code !== originalLang && !dubbedLanguages.some((d) => d.code === code)) {
+      if (code && !seenDubCodes.has(code)) {
+        seenDubCodes.add(code);
         const info = LANGUAGE_NAMES[code] || {
           name: lang.english_name || lang.name || code.toUpperCase(),
           native: lang.name || lang.english_name || code.toUpperCase(),
@@ -235,7 +240,8 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
   if (tmdb.translations?.translations && Array.isArray(tmdb.translations.translations)) {
     tmdb.translations.translations.forEach((tr: any) => {
       const code = tr.iso_639_1;
-      if (code && code !== originalLang && !dubbedLanguages.some((d) => d.code === code)) {
+      if (code && !seenDubCodes.has(code)) {
+        seenDubCodes.add(code);
         const info = LANGUAGE_NAMES[code] || {
           name: tr.english_name || tr.name || code.toUpperCase(),
           native: tr.name || tr.english_name || code.toUpperCase(),
@@ -254,7 +260,8 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
   // Standard major international theatrical studio dubbings for worldwide releases (like Avengers: Endgame)
   const STANDARD_STUDIO_DUBBINGS = ['en', 'de', 'fr', 'es', 'it', 'ja', 'pt', 'ru', 'ko', 'zh', 'tr', 'pl', 'nl', 'sv'];
   for (const code of STANDARD_STUDIO_DUBBINGS) {
-    if (code !== originalLang && !dubbedLanguages.some((d) => d.code === code)) {
+    if (!seenDubCodes.has(code)) {
+      seenDubCodes.add(code);
       const info = LANGUAGE_NAMES[code];
       if (info) {
         dubbedLanguages.push({
@@ -269,7 +276,6 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
   }
 
   // Real subtitle & localized translation tracks from TMDB
-  const seenSubCodes = new Set<string>();
   if (tmdb.translations?.translations && Array.isArray(tmdb.translations.translations)) {
     tmdb.translations.translations.forEach((tr: any) => {
       const code = tr.iso_639_1;
@@ -290,34 +296,36 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
     });
   }
 
-  // If translations endpoint was not appended, fallback to original and spoken languages
-  if (subtitledLanguages.length === 0) {
-    subtitledLanguages.push({
+  // If translations endpoint was not appended or empty, fallback to original and spoken languages
+  if (!seenSubCodes.has(originalLang)) {
+    seenSubCodes.add(originalLang);
+    subtitledLanguages.unshift({
       code: originalLang,
       name: origInfo.name,
       nativeName: origInfo.native,
       hasSDH: true,
       hasCC: true,
     });
-    if (Array.isArray(tmdb.spoken_languages)) {
-      tmdb.spoken_languages.forEach((lang: any) => {
-        const code = lang.iso_639_1;
-        if (code && !seenSubCodes.has(code)) {
-          seenSubCodes.add(code);
-          const info = LANGUAGE_NAMES[code] || {
-            name: lang.english_name || lang.name || code.toUpperCase(),
-            native: lang.name || lang.english_name || code.toUpperCase(),
-          };
-          subtitledLanguages.push({
-            code,
-            name: info.name,
-            nativeName: info.native,
-            hasSDH: false,
-            hasCC: true,
-          });
-        }
-      });
-    }
+  }
+
+  if (Array.isArray(tmdb.spoken_languages)) {
+    tmdb.spoken_languages.forEach((lang: any) => {
+      const code = lang.iso_639_1;
+      if (code && !seenSubCodes.has(code)) {
+        seenSubCodes.add(code);
+        const info = LANGUAGE_NAMES[code] || {
+          name: lang.english_name || lang.name || code.toUpperCase(),
+          native: lang.name || lang.english_name || code.toUpperCase(),
+        };
+        subtitledLanguages.push({
+          code,
+          name: info.name,
+          nativeName: info.native,
+          hasSDH: false,
+          hasCC: true,
+        });
+      }
+    });
   }
 
   // Watch providers
@@ -504,9 +512,9 @@ export function transformTmdbToMediaItem(tmdb: any, overrideType?: MediaType): M
       rottenTomatoes: Math.min(98, Math.round(voteAverage * 10 + 10)),
       metacritic: Math.min(95, Math.round(voteAverage * 9.5 + 8)),
     },
-    runtimeMinutes: tmdb.runtime || tmdb.episode_run_time?.[0] || (detectedType === 'movie' ? 124 : 45),
-    totalSeasons: tmdb.number_of_seasons || (detectedType === 'tv' || detectedType === 'anime' ? 1 : undefined),
-    totalEpisodes: tmdb.number_of_episodes || (detectedType === 'tv' || detectedType === 'anime' ? 12 : undefined),
+    runtimeMinutes: tmdb.runtime || tmdb.episode_run_time?.[0] || (isTvShow ? 45 : 124),
+    totalSeasons: tmdb.number_of_seasons || (isTvShow ? (Array.isArray(tmdb.seasons) && tmdb.seasons.length > 0 ? tmdb.seasons.length : 1) : undefined),
+    totalEpisodes: tmdb.number_of_episodes || (isTvShow ? 12 : undefined),
     status: tmdb.status || 'Released',
     originalLanguage: originalLang,
     originCountry: tmdb.origin_country?.[0] || tmdb.production_countries?.[0]?.iso_3166_1 || 'US',
@@ -612,8 +620,17 @@ export async function fetchDiscoverMedia(
 
 export async function fetchMediaDetails(id: string, type: MediaType = 'movie'): Promise<MediaItem> {
   try {
-    const res = await fetch(`/api/tmdb/details/${type}/${id}`);
-    if (!res.ok) throw new Error('Details API error');
+    let res = await fetch(`/api/tmdb/details/${type}/${id}`);
+    if (!res.ok) {
+      // Graceful fallback to alternate media type if miscategorized or anime movie/series
+      const fallbackType = type === 'tv' || type === 'anime' ? 'movie' : 'tv';
+      const fallbackRes = await fetch(`/api/tmdb/details/${fallbackType}/${id}`);
+      if (fallbackRes.ok) {
+        res = fallbackRes;
+      } else {
+        throw new Error('Details API error');
+      }
+    }
     const data = await res.json();
     return transformTmdbToMediaItem(data, type);
   } catch (err) {
@@ -653,7 +670,7 @@ export async function searchTmdbFull(
 ): Promise<{ media: MediaItem[]; actors: ActorItem[]; totalPages: number; page: number }> {
   if (!query.trim()) return { media: [], actors: [], totalPages: 0, page: 1 };
   try {
-    const res = await fetch(`/api/tmdb/search?query=${encodeURIComponent(query)}&page=${page}`);
+    const res = await fetch(`/api/tmdb/search?q=${encodeURIComponent(query)}&query=${encodeURIComponent(query)}&page=${page}`);
     if (!res.ok) throw new Error('Search API error');
     const data = await res.json();
     if (data.results && Array.isArray(data.results)) {

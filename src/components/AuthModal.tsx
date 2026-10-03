@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Flame, Shield, Cloud, Smartphone, Laptop, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence } from 'motion/react';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, closeAuthModal, loginGoogle, loginGuest } = useAuth();
@@ -37,24 +36,17 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={closeAuthModal}
-          className="fixed inset-0 bg-black/80 backdrop-blur-md"
-        />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        onClick={closeAuthModal}
+        className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300"
+      />
 
-        {/* Modal Window */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0e1222]/95 p-6 sm:p-8 backdrop-blur-2xl shadow-2xl space-y-6 text-white"
-        >
+      {/* Modal Window */}
+      <div
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#0e1222]/95 p-6 sm:p-8 backdrop-blur-2xl shadow-2xl space-y-6 text-white transition-all duration-300 transform scale-100 opacity-100"
+      >
           {/* Close button */}
           <button
             onClick={closeAuthModal}
@@ -144,8 +136,7 @@ export const AuthModal: React.FC = () => {
             <Shield className="h-3.5 w-3.5 text-emerald-400" />
             <span>Secure Firebase Authentication & Firestore Protection</span>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </AnimatePresence>
   );
 };

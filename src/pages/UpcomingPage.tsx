@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import {
   Clock,
   Radio,
@@ -136,7 +135,7 @@ export const UpcomingView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-24 text-slate-100 selection:bg-orange-500 selection:text-white" id="upcoming-page-root">
+      <div className="min-h-screen pb-24 text-slate-100 selection:bg-accent selection:text-white" id="upcoming-page-root">
         <UpcomingHeroSkeleton />
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
           <UpcomingGridSkeleton count={6} />
@@ -147,16 +146,16 @@ export const UpcomingView: React.FC = () => {
 
   if (!featuredItem || releases.length === 0) {
     return (
-      <div className="min-h-screen pb-24 text-slate-100 selection:bg-orange-500 selection:text-white flex flex-col items-center justify-center p-8 text-center" id="upcoming-page-root">
+      <div className="min-h-screen pb-24 text-slate-100 selection:bg-accent selection:text-white flex flex-col items-center justify-center p-8 text-center" id="upcoming-page-root">
         <div className="max-w-md space-y-4">
-          <Clock className="w-16 h-16 text-orange-500 mx-auto animate-pulse" />
+          <Clock className="w-16 h-16 text-accent mx-auto animate-pulse" />
           <h2 className="text-2xl font-bold text-white">Upcoming Releases Loading</h2>
           <p className="text-sm text-slate-400">
             Fetching latest theatrical broadcast schedules and cinema release dates.
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-lg hover:bg-orange-600 transition-all"
+            className={`px-6 py-2.5 rounded-xl bg-gradient-to-r ${accentConfig.gradient} text-white font-bold text-sm shadow-lg hover:opacity-90 transition-all`}
           >
             Refresh Schedule
           </button>
@@ -166,7 +165,7 @@ export const UpcomingView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pb-24 text-slate-100 selection:bg-orange-500 selection:text-white" id="upcoming-page-root">
+    <div className="min-h-screen pb-24 text-slate-100 selection:bg-accent selection:text-white" id="upcoming-page-root">
       
       {/* ---------------- LIVE HERO COUNTDOWN BROADCAST ---------------- */}
       <section className="relative w-full overflow-hidden bg-slate-950 border-b border-white/10" id="live-countdown-hero">
@@ -200,7 +199,7 @@ export const UpcomingView: React.FC = () => {
 
             <div className="flex items-center gap-3 text-xs text-white/70 font-mono">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
-                <Flame className="w-3.5 h-3.5 text-orange-400" />
+                <Flame className="w-3.5 h-3.5 text-accent" />
                 <span className="font-bold text-white">
                   {((featuredItem.hypeCount || 800000) + (hypeVotes[featuredItem.id] || 0)).toLocaleString()}
                 </span>
@@ -237,22 +236,22 @@ export const UpcomingView: React.FC = () => {
                   {featuredItem.title}
                 </h1>
                 {featuredItem.tagline && (
-                  <p className="text-base sm:text-lg text-orange-400/90 font-medium italic mt-2">
+                  <p className="text-base sm:text-lg text-accent font-medium italic mt-2">
                     "{featuredItem.tagline}"
                   </p>
                 )}
               </div>
 
               {/* LIVE DIGITAL COUNTDOWN CLOCK */}
-              <div className="p-4 sm:p-6 rounded-3xl bg-slate-900/90 border border-orange-500/30 shadow-2xl backdrop-blur-2xl space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="p-4 sm:p-6 rounded-3xl bg-slate-900/90 border border-accent/30 shadow-2xl backdrop-blur-2xl space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
                 
                 <div className="flex items-center justify-between text-xs uppercase tracking-widest text-white/60 font-mono">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-orange-400 animate-spin" style={{ animationDuration: '8s' }} />
+                    <Clock className="w-4 h-4 text-accent animate-spin" style={{ animationDuration: '8s' }} />
                     <span>TIME UNTIL GLOBAL PREMIERE</span>
                   </div>
-                  <span className="text-orange-400 font-bold">{featuredItem.releaseDate}</span>
+                  <span className="text-accent font-bold">{featuredItem.releaseDate}</span>
                 </div>
 
                 {/* Digital Clock Digits */}
@@ -263,7 +262,7 @@ export const UpcomingView: React.FC = () => {
                     <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white font-mono tracking-tight text-glow">
                       {String(countdown.days).padStart(3, '0')}
                     </span>
-                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-orange-400 font-bold mt-1">
+                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-bold mt-1">
                       DAYS
                     </span>
                   </div>
@@ -273,7 +272,7 @@ export const UpcomingView: React.FC = () => {
                     <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white font-mono tracking-tight">
                       {String(countdown.hours).padStart(2, '0')}
                     </span>
-                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-orange-400 font-bold mt-1">
+                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-bold mt-1">
                       HOURS
                     </span>
                   </div>
@@ -283,17 +282,17 @@ export const UpcomingView: React.FC = () => {
                     <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white font-mono tracking-tight">
                       {String(countdown.minutes).padStart(2, '0')}
                     </span>
-                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-orange-400 font-bold mt-1">
+                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-accent font-bold mt-1">
                       MINS
                     </span>
                   </div>
 
                   {/* SECONDS */}
-                  <div className="flex flex-col p-3 sm:p-4 rounded-2xl bg-black/60 border border-orange-500/40 shadow-inner bg-gradient-to-b from-orange-500/10 to-transparent">
-                    <span className="text-2xl sm:text-4xl md:text-5xl font-black text-orange-400 font-mono tracking-tight animate-pulse">
+                  <div className="flex flex-col p-3 sm:p-4 rounded-2xl bg-black/60 border border-accent/40 shadow-inner bg-gradient-to-b from-accent/10 to-transparent">
+                    <span className="text-2xl sm:text-4xl md:text-5xl font-black text-accent font-mono tracking-tight animate-pulse">
                       {String(countdown.seconds).padStart(2, '0')}
                     </span>
-                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-orange-300 font-bold mt-1">
+                    <span className="text-[10px] sm:text-xs uppercase tracking-widest text-accent/80 font-bold mt-1">
                       SECS
                     </span>
                   </div>
@@ -314,7 +313,7 @@ export const UpcomingView: React.FC = () => {
                 {featuredItem.trailerYoutubeId && (
                   <button
                     onClick={() => playTrailer(featuredItem.trailerYoutubeId!, featuredItem.title)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold text-sm shadow-xl shadow-red-600/30 hover:scale-105 active:scale-95 transition-all"
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-sm shadow-xl shadow-red-600/30 hover:scale-105 active:scale-95 transition-all"
                   >
                     <Play className="w-4 h-4 fill-white" />
                     <span>Watch Teaser Trailer</span>
@@ -344,7 +343,7 @@ export const UpcomingView: React.FC = () => {
 
                 <button
                   onClick={() => addHype(featuredItem.id)}
-                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 font-semibold text-sm transition-all"
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 font-semibold text-sm transition-all"
                 >
                   <Flame className="w-4 h-4" />
                   <span>Hype +1</span>
@@ -395,7 +394,7 @@ export const UpcomingView: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/10 pb-6">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              <Sparkles className="w-6 h-6 text-orange-400" />
+              <Sparkles className="w-6 h-6 text-accent" />
               <span>Upcoming Movies, Series & Episodes</span>
             </h2>
             <p className="text-xs sm:text-sm text-white/60 mt-1">
@@ -411,7 +410,7 @@ export const UpcomingView: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search upcoming titles, cast..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder-white/40 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-xs text-white placeholder-white/40 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
         </div>
@@ -424,7 +423,7 @@ export const UpcomingView: React.FC = () => {
               onClick={() => setSelectedUniverse(uni)}
               className={`px-4 py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
                 selectedUniverse === uni
-                  ? `bg-gradient-to-r ${accentConfig.gradient} text-white shadow-md shadow-orange-500/20`
+                  ? `bg-gradient-to-r ${accentConfig.gradient} text-white shadow-md shadow-accent/20`
                   : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
               }`}
             >
@@ -464,13 +463,11 @@ export const UpcomingView: React.FC = () => {
             const currentHype = (item.hypeCount || 500000) + (hypeVotes[item.id] || 0);
 
             return (
-              <motion.div
+              <div
                 key={item.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`relative flex flex-col justify-between overflow-hidden rounded-3xl border transition-all duration-300 ${
+                className={`relative flex flex-col justify-between overflow-hidden rounded-3xl border transition-all duration-300 transform opacity-100 ${
                   isFeatured
-                    ? 'border-orange-500/60 bg-gradient-to-b from-orange-500/10 via-slate-900 to-slate-950 shadow-2xl shadow-orange-500/10 ring-1 ring-orange-500/40'
+                    ? 'border-accent/60 bg-gradient-to-b from-accent/10 via-slate-900 to-slate-950 shadow-2xl shadow-accent/10 ring-1 ring-accent/40'
                     : 'border-white/10 bg-slate-900/70 hover:border-white/25 hover:shadow-xl'
                 }`}
               >
@@ -500,22 +497,22 @@ export const UpcomingView: React.FC = () => {
                   <div className="absolute bottom-3 left-3 right-3 p-2.5 rounded-2xl bg-black/85 border border-white/10 backdrop-blur-xl flex items-center justify-around text-center">
                     <div>
                       <span className="text-sm font-black text-white font-mono">{itemCountdown.days}</span>
-                      <span className="block text-[8px] uppercase tracking-wider text-orange-400 font-bold">DAYS</span>
+                      <span className="block text-[8px] uppercase tracking-wider text-accent font-bold">DAYS</span>
                     </div>
                     <span className="text-white/30">:</span>
                     <div>
                       <span className="text-sm font-black text-white font-mono">{itemCountdown.hours}</span>
-                      <span className="block text-[8px] uppercase tracking-wider text-orange-400 font-bold">HRS</span>
+                      <span className="block text-[8px] uppercase tracking-wider text-accent font-bold">HRS</span>
                     </div>
                     <span className="text-white/30">:</span>
                     <div>
                       <span className="text-sm font-black text-white font-mono">{itemCountdown.minutes}</span>
-                      <span className="block text-[8px] uppercase tracking-wider text-orange-400 font-bold">MINS</span>
+                      <span className="block text-[8px] uppercase tracking-wider text-accent font-bold">MINS</span>
                     </div>
                     <span className="text-white/30">:</span>
                     <div>
-                      <span className="text-sm font-black text-orange-400 font-mono animate-pulse">{itemCountdown.seconds}</span>
-                      <span className="block text-[8px] uppercase tracking-wider text-orange-300 font-bold">SECS</span>
+                      <span className="text-sm font-black text-accent font-mono animate-pulse">{itemCountdown.seconds}</span>
+                      <span className="block text-[8px] uppercase tracking-wider text-accent/80 font-bold">SECS</span>
                     </div>
                   </div>
                 </div>
@@ -531,7 +528,7 @@ export const UpcomingView: React.FC = () => {
                         onClick={() => setFeaturedItem(item)}
                         className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
                           isFeatured
-                            ? 'bg-orange-500 text-white'
+                            ? 'bg-accent text-white'
                             : 'bg-white/10 text-white/70 hover:text-white hover:bg-white/20'
                         }`}
                         title="Pin this title as the main hero live countdown"
@@ -577,7 +574,7 @@ export const UpcomingView: React.FC = () => {
 
                       <button
                         onClick={() => addHype(item.id)}
-                        className="flex items-center gap-1 px-3 py-2 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-semibold transition-all"
+                        className="flex items-center gap-1 px-3 py-2 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 text-xs font-semibold transition-all"
                         title="Cast hype vote"
                       >
                         <Flame className="w-3.5 h-3.5" />
@@ -599,7 +596,7 @@ export const UpcomingView: React.FC = () => {
                   </div>
 
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>

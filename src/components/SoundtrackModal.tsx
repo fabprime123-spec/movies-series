@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSoundtrack } from '../context/SoundtrackContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   X, 
   Play, 
@@ -10,13 +11,13 @@ import {
   Disc, 
   Volume2, 
   VolumeX, 
-  ExternalLink,
-  ListMusic,
-  Sparkles
+  ExternalLink, 
+  ListMusic, 
+  Sparkles 
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 
 export const SoundtrackModal: React.FC = () => {
+  const { accentConfig } = useTheme();
   const {
     currentAlbum,
     currentTrack,
@@ -39,27 +40,22 @@ export const SoundtrackModal: React.FC = () => {
   const activeVideoKey = currentTrack.youtubeId || 'dQw4w9WgXcQ';
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl">
-        
-        {/* Dynamic Ambient Glow matching Soundtrack Mood */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
-          <div className="w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-orange-600/25 via-amber-500/20 to-transparent blur-[140px] animate-pulse" />
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl">
+      
+      {/* Dynamic Ambient Glow matching Soundtrack Mood */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
+        <div className="w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-accent/25 via-accent/15 to-transparent blur-[140px] animate-pulse" />
+      </div>
 
-        {/* Modal Window */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-4xl max-h-[92vh] rounded-3xl bg-[#0c0e15] border border-white/10 shadow-2xl overflow-hidden flex flex-col z-10 text-white"
-        >
+      {/* Modal Window */}
+      <div
+        className="relative w-full max-w-4xl max-h-[92vh] rounded-3xl bg-[#0c0e15] border border-white/10 shadow-2xl overflow-hidden flex flex-col z-10 text-white transition-all duration-300 transform scale-100 opacity-100"
+      >
           
           {/* Header */}
           <div className="flex items-center justify-between px-5 sm:px-8 py-4 border-b border-white/10 bg-white/[0.02]">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30">
+              <div className="p-2 rounded-xl bg-accent/20 text-accent border border-accent/30">
                 <Music2 className="w-5 h-5" />
               </div>
               <div>
@@ -83,7 +79,7 @@ export const SoundtrackModal: React.FC = () => {
                 rel="noreferrer"
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/80 transition-colors border border-white/10"
               >
-                <ExternalLink className="w-3.5 h-3.5 text-orange-400" />
+                <ExternalLink className="w-3.5 h-3.5 text-accent" />
                 <span>Search on YouTube</span>
               </a>
               <button
@@ -108,7 +104,7 @@ export const SoundtrackModal: React.FC = () => {
                   {/* Vinyl Grooves */}
                   <div className="w-full h-full rounded-full border border-white/10 flex items-center justify-center">
                     <div className="w-3/4 h-3/4 rounded-full border border-white/10 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-md">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${accentConfig.gradient} flex items-center justify-center shadow-md`}>
                         <Disc className="w-8 h-8 text-white" />
                       </div>
                     </div>
@@ -119,7 +115,7 @@ export const SoundtrackModal: React.FC = () => {
               {/* Track Details & Controls */}
               <div className="flex-1 text-center md:text-left space-y-4">
                 <div>
-                  <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                  <span className="text-[10px] font-bold text-accent uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/20">
                     Track #{currentTrack.trackNumber}
                   </span>
                   <h2 className="text-xl sm:text-2xl font-bold text-white mt-1.5 line-clamp-1">
@@ -135,7 +131,7 @@ export const SoundtrackModal: React.FC = () => {
                   {Array.from({ length: 28 }).map((_, idx) => (
                     <span
                       key={idx}
-                      className={`w-1 rounded-full bg-orange-400/70 transition-all ${
+                      className={`w-1 rounded-full bg-accent/70 transition-all ${
                         isPlaying ? 'animate-pulse' : 'h-2 opacity-30'
                       }`}
                       style={{
@@ -160,7 +156,7 @@ export const SoundtrackModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={togglePlay}
-                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm shadow-xl shadow-orange-500/25 flex items-center gap-2 transition-all active:scale-95"
+                    className={`px-6 py-3 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-90 text-white font-bold text-sm shadow-xl shadow-accent/25 flex items-center gap-2 transition-all active:scale-95`}
                   >
                     {isPlaying ? (
                       <>
@@ -203,7 +199,7 @@ export const SoundtrackModal: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                 <div className="flex items-center gap-2 text-sm font-bold text-white">
-                  <ListMusic className="w-4 h-4 text-orange-400" />
+                  <ListMusic className="w-4 h-4 text-accent" />
                   <span>Album Tracklist ({currentAlbum.tracks.length} Tracks)</span>
                 </div>
                 <span className="text-xs text-white/50">{currentAlbum.label}</span>
@@ -219,16 +215,16 @@ export const SoundtrackModal: React.FC = () => {
                       onClick={() => playTrack(currentAlbum, idx)}
                       className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all group ${
                         isActive
-                          ? 'bg-orange-500/15 border-orange-500/40 text-orange-400 shadow-sm'
+                          ? 'bg-accent/15 border-accent/40 text-accent shadow-sm'
                           : 'bg-white/[0.02] border-white/10 text-white/80 hover:bg-white/5 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className={`w-6 text-xs font-mono font-bold ${isActive ? 'text-orange-400' : 'text-white/40'}`}>
+                        <span className={`w-6 text-xs font-mono font-bold ${isActive ? 'text-accent' : 'text-white/40'}`}>
                           {String(track.trackNumber).padStart(2, '0')}
                         </span>
                         <div className="min-w-0">
-                          <p className={`text-xs sm:text-sm font-medium truncate group-hover:text-orange-400 transition-colors ${isActive ? 'font-bold text-orange-400' : ''}`}>
+                          <p className={`text-xs sm:text-sm font-medium truncate group-hover:text-accent transition-colors ${isActive ? 'font-bold text-accent' : ''}`}>
                             {track.title}
                           </p>
                           <p className="text-[11px] text-white/40 truncate">
@@ -239,7 +235,7 @@ export const SoundtrackModal: React.FC = () => {
 
                       <div className="flex items-center gap-2 shrink-0 ml-2">
                         <span className="text-xs font-mono text-white/50">{track.duration}</span>
-                        <div className={`p-1.5 rounded-lg ${isActive ? 'bg-orange-500 text-white' : 'bg-white/5 text-white/60 group-hover:bg-orange-500 group-hover:text-white'} transition-colors`}>
+                        <div className={`p-1.5 rounded-lg ${isActive ? 'bg-accent text-white' : 'bg-white/5 text-white/60 group-hover:bg-accent group-hover:text-white'} transition-colors`}>
                           {isActive && isPlaying ? (
                             <Pause className="w-3.5 h-3.5 fill-current" />
                           ) : (
@@ -255,8 +251,7 @@ export const SoundtrackModal: React.FC = () => {
 
           </div>
 
-        </motion.div>
+        </div>
       </div>
-    </AnimatePresence>
   );
 };

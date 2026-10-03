@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   Bookmark,
   History,
@@ -90,7 +89,7 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ defaultTab }) => {
   const watchingCount = watchlist.filter((w) => w.status === 'watching').length;
 
   return (
-    <div className="min-h-screen pb-24 text-foreground selection:bg-orange-500 selection:text-white" id="library-page-root">
+    <div className="min-h-screen pb-24 text-foreground selection:bg-accent selection:text-white" id="library-page-root">
       
       {/* ---------------- LIBRARY HERO HEADER ---------------- */}
       <section className="border-b border-border bg-card py-10 px-4 sm:px-6 lg:px-8">
@@ -98,7 +97,7 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ defaultTab }) => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-md bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[10px] uppercase tracking-wider shadow">
+                <span className={`px-2.5 py-1 rounded-md bg-gradient-to-r ${accentConfig.gradient} text-white font-bold text-[10px] uppercase tracking-wider shadow`}>
                   Personal Vault
                 </span>
                 <span className="text-xs text-muted font-medium">
@@ -262,13 +261,9 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ defaultTab }) => {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
                   {filteredWatchlist.map((item) => (
-                    <motion.div
+                    <div
                       key={item.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="group relative flex flex-col rounded-2xl bg-card border border-border overflow-hidden hover:border-ring transition-all duration-300 shadow-md"
+                      className="group relative flex flex-col rounded-2xl bg-card border border-border overflow-hidden hover:border-ring transition-all duration-300 shadow-md transform hover:scale-[1.02]"
                     >
                       {/* Poster Image */}
                       <div className="relative aspect-[2/3] w-full overflow-hidden bg-surface">
@@ -363,7 +358,7 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ defaultTab }) => {
                           <option value="dropped">Dropped</option>
                         </select>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               )}

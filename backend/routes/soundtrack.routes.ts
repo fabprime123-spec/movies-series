@@ -10,3 +10,4 @@ export const soundtrackRouter = Router();
 
 // Soundtrack tracklist lookup and YouTube query generator
 soundtrackRouter.get('/', SoundtrackController.getSoundtrack);
+soundtrackRouter.get('/:title', SoundtrackController.getSoundtrack);

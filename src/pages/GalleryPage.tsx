@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowLeft,
   Image as ImageIcon,
@@ -126,7 +125,7 @@ export const GalleryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 text-slate-100 selection:bg-orange-500 selection:text-white" id="gallery-page-root">
+    <div className="min-h-screen pb-24 text-slate-100 selection:bg-accent selection:text-white" id="gallery-page-root">
       
       {/* ---------------- IMMERSIVE HEADER HERO ---------------- */}
       <section className="relative w-full overflow-hidden border-b border-border bg-card">
@@ -176,7 +175,7 @@ export const GalleryPage: React.FC = () => {
           {/* Title Header */}
           <div className="space-y-2 max-w-3xl">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-md bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[10px] uppercase tracking-wider shadow">
+              <span className={`px-2.5 py-1 rounded-md bg-gradient-to-r ${accentConfig.gradient} text-white font-bold text-[10px] uppercase tracking-wider shadow`}>
                 HD Image Vault
               </span>
               {mediaYear && (
@@ -243,16 +242,13 @@ export const GalleryPage: React.FC = () => {
             {displayedImages.map((img, index) => {
               const isPoster = img.type === 'poster';
               return (
-                <motion.div
+                <div
                   key={`${img.url}-${index}`}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03, duration: 0.2 }}
                   onClick={() => {
                     const globalIdx = allImagesList.findIndex((item) => item.url === img.url);
                     setLightboxIndex(globalIdx >= 0 ? globalIdx : 0);
                   }}
-                  className={`group relative overflow-hidden rounded-2xl border border-border bg-surface cursor-pointer shadow-md hover:shadow-2xl transition-all duration-300 ${
+                  className={`group relative overflow-hidden rounded-2xl border border-border bg-surface cursor-pointer shadow-md hover:shadow-2xl transition-all duration-300 transform opacity-100 hover:scale-[1.01] ${
                     isPoster
                       ? 'aspect-[2/3]'
                       : 'aspect-[16/9] sm:col-span-1 md:col-span-1 lg:col-span-2'
@@ -284,7 +280,7 @@ export const GalleryPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>

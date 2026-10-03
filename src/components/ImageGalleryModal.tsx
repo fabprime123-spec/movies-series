@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   ChevronLeft, 
@@ -130,13 +129,12 @@ export const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
   const isBackdrop = currentImage?.type === 'backdrop' || (currentImage?.aspectRatio && currentImage.aspectRatio > 1.2);
 
   const modalContent = (
-    <AnimatePresence>
-      <div 
-        className="fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-black/96 backdrop-blur-3xl select-none overflow-hidden h-screen w-screen"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
-      >
+    <div 
+      className="fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-black/96 backdrop-blur-3xl select-none overflow-hidden h-screen w-screen"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
         {/* Top Control Bar */}
         <div className="relative z-30 w-full flex items-center justify-between px-4 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-b from-black/90 via-black/60 to-transparent border-b border-white/10 backdrop-blur-md">
           <div className="flex items-center gap-3 min-w-0">
@@ -253,21 +251,14 @@ export const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
           className="relative w-full flex-1 flex items-center justify-center p-4 sm:p-8 overflow-auto scrollbar-none"
           onClick={() => setIsZoomed((prev) => !prev)}
         >
-          <motion.img
+          <img
             key={currentImage.url}
             src={currentImage.url}
             alt={`${title} visual ${currentIndex + 1}`}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ 
-              opacity: 1, 
-              scale: isZoomed ? 1.35 : 1,
-            }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className={`cursor-zoom-in transition-transform duration-300 rounded-xl sm:rounded-2xl shadow-2xl border border-white/10 ${
+            className={`cursor-zoom-in transition-all duration-300 transform rounded-xl sm:rounded-2xl shadow-2xl border border-white/10 ${
               isZoomed 
-                ? 'max-w-none' 
-                : 'max-h-[calc(100vh-175px)] max-w-[calc(100vw-80px)] w-auto h-auto object-contain'
+                ? 'max-w-none scale-125' 
+                : 'max-h-[calc(100vh-175px)] max-w-[calc(100vw-80px)] w-auto h-auto object-contain scale-100'
             }`}
           />
         </div>
@@ -289,7 +280,7 @@ export const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
                     }}
                     className={`relative shrink-0 rounded-lg overflow-hidden transition-all duration-200 ${
                       isSelected
-                        ? `ring-2 ring-offset-2 ring-offset-black scale-105 opacity-100 ring-orange-500`
+                        ? `ring-2 ring-offset-2 ring-offset-black scale-105 opacity-100 ring-accent`
                         : 'opacity-40 hover:opacity-85'
                     }`}
                     style={{ width: isImgPoster ? '32px' : '56px', height: '36px' }}
@@ -314,7 +305,7 @@ export const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
             <span>•</span>
             <button
               onClick={handleDownload}
-              className="text-orange-400 hover:text-orange-300 font-semibold underline flex items-center gap-1"
+              className="text-accent hover:opacity-80 font-semibold underline flex items-center gap-1"
             >
               <Download className="w-3 h-3" />
               Download full resolution
@@ -322,7 +313,6 @@ export const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({
           </div>
         </div>
       </div>
-    </AnimatePresence>
   );
 
   return createPortal(modalContent, document.body);

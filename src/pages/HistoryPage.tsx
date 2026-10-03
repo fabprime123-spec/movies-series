@@ -19,7 +19,6 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
 
 function formatTimeAgo(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -238,13 +237,9 @@ export const HistoryPage: React.FC = () => {
                   const inWatchlist = isInWatchlist(media.id);
 
                   return (
-                    <motion.div
+                    <div
                       key={`${entry.id}-${entry.viewedAt}`}
-                      layout
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      className="group relative rounded-2xl overflow-hidden bg-card border border-border hover:border-accent shadow-sm hover:shadow-md transition-all flex flex-col"
+                      className="group relative rounded-2xl overflow-hidden bg-card border border-border hover:border-accent shadow-sm hover:shadow-md transition-all flex flex-col transform hover:scale-[1.01]"
                     >
                       {/* Top Poster Thumbnail with Info */}
                       <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface cursor-pointer" onClick={() => navigate(`/details/${media.type}/${media.id}`)}>
@@ -347,7 +342,7 @@ export const HistoryPage: React.FC = () => {
                           </Link>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>

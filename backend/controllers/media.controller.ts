@@ -63,19 +63,42 @@ export class MediaController {
 
   /**
    * GET /api/tmdb/details/:type/:id
-   * Retrieves full cinematic metadata with cast, crew, trailers, gallery, and ratings
+   * Retrieves full cinematic metadata with cast, crew, trailers, gallery, and ratings.
+   * Gracefully falls back between movie and TV endpoints if the title is an anime movie/series or miscategorized.
    */
   static async getDetails(req: Request, res: Response) {
     try {
       const { type, id } = req.params;
-      const mediaType = type === 'tv' || type === 'anime' ? 'tv' : 'movie';
-
-      const data = await TmdbService.fetchFromTmdb(`/${mediaType}/${id}`, {
+      const appendParams = {
         append_to_response:
           'credits,videos,images,watch/providers,release_dates,content_ratings,recommendations,similar',
-      });
+      };
 
-      return sendSuccess(res, data);
+      const isTv = type === 'tv';
+      const isAnime = type === 'anime';
+      // For anime and tv, default to trying /tv first, but fall back seamlessly to /movie
+      const primaryType = isTv || isAnime ? 'tv' : 'movie';
+      const fallbackType = primaryType === 'tv' ? 'movie' : 'tv';
+
+      try {
+        const data = await TmdbService.fetchFromTmdb(
+          `/${primaryType}/${id}`,
+          appendParams,
+          5 * 60 * 1000,
+          { silent404: true }
+        );
+        return sendSuccess(res, data);
+      } catch (err: any) {
+        if (err?.status === 404 || err?.message?.includes('404')) {
+          const fallbackData = await TmdbService.fetchFromTmdb(
+            `/${fallbackType}/${id}`,
+            appendParams,
+            5 * 60 * 1000
+          );
+          return sendSuccess(res, fallbackData);
+        }
+        throw err;
+      }
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to fetch title details', 500);
     }
@@ -83,14 +106,34 @@ export class MediaController {
 
   /**
    * GET /api/tmdb/images/:type/:id
-   * Retrieves high-resolution posters, backdrops, and logo assets
+   * Retrieves high-resolution posters, backdrops, and logo assets with graceful fallback
    */
   static async getImages(req: Request, res: Response) {
     try {
       const { type, id } = req.params;
-      const mediaType = type === 'tv' || type === 'anime' ? 'tv' : 'movie';
-      const data = await TmdbService.fetchFromTmdb(`/${mediaType}/${id}/images`);
-      return sendSuccess(res, data);
+      const isTv = type === 'tv';
+      const isAnime = type === 'anime';
+      const primaryType = isTv || isAnime ? 'tv' : 'movie';
+      const fallbackType = primaryType === 'tv' ? 'movie' : 'tv';
+
+      try {
+        const data = await TmdbService.fetchFromTmdb(
+          `/${primaryType}/${id}/images`,
+          {},
+          5 * 60 * 1000,
+          { silent404: true }
+        );
+        return sendSuccess(res, data);
+      } catch (err: any) {
+        if (err?.status === 404 || err?.message?.includes('404')) {
+          const fallbackData = await TmdbService.fetchFromTmdb(
+            `/${fallbackType}/${id}/images`,
+            {}
+          );
+          return sendSuccess(res, fallbackData);
+        }
+        throw err;
+      }
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to fetch media images', 500);
     }
@@ -102,7 +145,7 @@ export class MediaController {
    */
   static async search(req: Request, res: Response) {
     try {
-      const query = (req.query.q as string) || '';
+      const query = (req.query.q as string) || (req.query.query as string) || '';
       const page = (req.query.page as string) || '1';
 
       if (!query.trim()) {
@@ -181,6 +224,45 @@ export class MediaController {
       return sendSuccess(res, data);
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to fetch popular actors', 500);
+    }
+  }
+
+  /**
+   * GET /api/tmdb/season/:tvId/:seasonNumber
+   * Retrieves full episodic breakdown with titles, overviews, still images, and air dates
+   */
+  static async getSeasonEpisodes(req: Request, res: Response) {
+    try {
+      const { tvId, seasonNumber } = req.params;
+      const data = await TmdbService.fetchFromTmdb(`/tv/${tvId}/season/${seasonNumber}`);
+      return sendSuccess(res, data);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch season episodes', 500);
+    }
+  }
+
+  /**
+   * GET /api/tmdb/search/person
+   * Search specifically for cast, directors, and screenwriters
+   */
+  static async searchPerson(req: Request, res: Response) {
+    try {
+      const query = (req.query.query as string) || (req.query.q as string) || '';
+      const page = (req.query.page as string) || '1';
+
+      if (!query.trim()) {
+        return sendSuccess(res, { page: 1, results: [], total_pages: 0, total_results: 0 });
+      }
+
+      const data = await TmdbService.fetchFromTmdb('/search/person', {
+        query,
+        page,
+        include_adult: 'false',
+      });
+
+      return sendSuccess(res, data);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Actor search failed', 500);
     }
   }
 

@@ -20,14 +20,19 @@ mediaRouter.get('/details/:type/:id', MediaController.getDetails);
 // High-resolution posters, backdrops, and logos
 mediaRouter.get('/images/:type/:id', MediaController.getImages);
 
+// Season episodes
+mediaRouter.get('/season/:tvId/:seasonNumber', MediaController.getSeasonEpisodes);
+
 // Multi-category search
 mediaRouter.get('/search', MediaController.search);
+mediaRouter.get('/search/person', MediaController.searchPerson);
 
 // Upcoming theatrical releases & TV airings
 mediaRouter.get('/upcoming', MediaController.getUpcoming);
 
-// Person / actor profile
+// Person / actor profile (support both /person/:id and /actor/:id)
 mediaRouter.get('/person/:id', MediaController.getPerson);
+mediaRouter.get('/actor/:id', MediaController.getPerson);
 
 // Person filmography credits
 mediaRouter.get('/person/:id/credits', MediaController.getPersonCredits);

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { MediaItem, NavTab } from '../types';
 import { useWatchlist } from '../context/WatchlistContext';
-import { motion, AnimatePresence } from 'motion/react';
+import { useTheme } from '../context/ThemeContext';
 import { fetchMediaDetails, fetchSeasonEpisodes } from '../services/tmdb';
 
 interface MediaDetailsModalProps {
@@ -43,6 +43,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
   onNavTabChange,
   onOpenSearch,
 }) => {
+  const { accentConfig } = useTheme();
   if (!initialItem) return null;
 
   const [item, setItem] = useState<MediaItem>(initialItem);
@@ -110,7 +111,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
   const secondaryCategory = item.genres[0]?.toUpperCase() || 'FEATURE';
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0c0d12] text-white flex flex-col selection:bg-orange-500 selection:text-white">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0c0d12] text-white flex flex-col selection:bg-accent selection:text-white">
       
       {/* Top Navigation Bar Matching Screenshot */}
       <header className="sticky top-0 z-50 w-full border-b border-white/10 backdrop-blur-xl bg-[#0c0d12]/75 transition-all duration-300">
@@ -121,11 +122,11 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
             onClick={onClose}
             className="flex items-center gap-3 cursor-pointer group select-none shrink-0"
           >
-            <div className="w-9 h-9 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/25 group-hover:scale-105 transition-transform duration-300">
+            <div className={`w-9 h-9 bg-gradient-to-br ${accentConfig.gradient} rounded-xl flex items-center justify-center shadow-lg shadow-accent/25 group-hover:scale-105 transition-transform duration-300`}>
               <Clapperboard className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-['Outfit',sans-serif] text-lg font-extrabold tracking-tight text-white group-hover:text-orange-400 transition-colors">
+              <span className="font-['Outfit',sans-serif] text-lg font-extrabold tracking-tight text-white group-hover:text-accent transition-colors">
                 Movieace
               </span>
               <span className="text-[9px] font-bold tracking-[0.2em] text-white/50 uppercase">
@@ -167,7 +168,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
             >
               <span>Series</span>
               {(item.type === 'tv' || item.type === 'anime') && (
-                <div className="absolute -bottom-1.5 h-1 w-1 rounded-full bg-orange-500 shadow-md shadow-orange-500/50" />
+                <div className="absolute -bottom-1.5 h-1 w-1 rounded-full bg-accent shadow-md shadow-accent/50" />
               )}
             </button>
             <button
@@ -194,7 +195,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={onOpenSearch || onClose}
-              className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-3.5 py-1.5 text-xs text-white/60 hover:border-orange-500/40 hover:text-white hover:bg-white/10 transition-all duration-200"
+              className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/10 px-3.5 py-1.5 text-xs text-white/60 hover:border-accent/40 hover:text-white hover:bg-white/10 transition-all duration-200"
             >
               <Search className="h-3.5 w-3.5 text-white/40" />
               <span className="hidden sm:inline">Search</span>
@@ -208,12 +209,12 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
               }}
               className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200 ${
                 inWatchlist
-                  ? 'border-orange-500 bg-orange-500/20 text-orange-400 shadow-md shadow-orange-500/20'
+                  ? 'border-accent bg-accent/20 text-accent shadow-md shadow-accent/20'
                   : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
               }`}
               title={inWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
             >
-              {inWatchlist ? <BookmarkCheck className="h-4 w-4 text-orange-400 fill-orange-400/20" /> : <Bookmark className="h-4 w-4" />}
+              {inWatchlist ? <BookmarkCheck className="h-4 w-4 text-accent fill-accent/20" /> : <Bookmark className="h-4 w-4" />}
             </button>
           </div>
         </div>
@@ -238,7 +239,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
         <div className="relative z-20 px-6 sm:px-12 lg:px-16 pt-6">
           <button
             onClick={onClose}
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70 hover:text-orange-400 transition-colors group cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70 hover:text-accent transition-colors group cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" />
             <span>Back to Issue</span>
@@ -250,7 +251,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
           
           {/* Category & Year Tagline: ANIMATION • SERIES • 2013 */}
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]">
-            <span className="text-orange-500 font-extrabold">
+            <span className="text-accent font-extrabold">
               {primaryCategory} • {secondaryCategory}
             </span>
             <span className="text-white/40">•</span>
@@ -285,12 +286,12 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
             )}
           </div>
 
-          {/* Action Buttons: Solid Orange Pill + Ghost Watchlist Pill */}
+          {/* Action Buttons: Solid Accent Pill + Ghost Watchlist Pill */}
           <div className="flex flex-wrap items-center gap-3 pt-3">
             {/* Primary Action Button: Resume S1 • E1 / Play Trailer */}
             <button
               onClick={() => onPlayTrailer(item.trailerYoutubeId, item.title)}
-              className="flex items-center gap-2.5 rounded-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-600 hover:to-orange-700 px-7 py-3 text-sm font-bold text-white shadow-xl shadow-orange-500/30 transition-all active:scale-95 cursor-pointer"
+              className={`flex items-center gap-2.5 rounded-full bg-gradient-to-r ${accentConfig.gradient} hover:opacity-90 px-7 py-3 text-sm font-bold text-white shadow-xl shadow-accent/30 transition-all active:scale-95 cursor-pointer`}
             >
               <Play className="h-4 w-4 fill-white" />
               <span>
@@ -306,13 +307,13 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
               }}
               className={`flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-bold backdrop-blur-md transition-all active:scale-95 cursor-pointer ${
                 inWatchlist
-                  ? 'border-orange-500 bg-orange-500/20 text-orange-400 shadow-lg shadow-orange-500/20'
+                  ? 'border-accent bg-accent/20 text-accent shadow-lg shadow-accent/20'
                   : 'border-white/20 bg-white/5 text-white hover:bg-white/15 hover:border-white/30'
               }`}
             >
               {inWatchlist ? (
                 <>
-                  <BookmarkCheck className="h-4 w-4 fill-orange-400" />
+                  <BookmarkCheck className="h-4 w-4 fill-accent" />
                   <span>In Watchlist</span>
                 </>
               ) : (
@@ -357,7 +358,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                 onClick={() => setActiveTab(tab.id as DetailTab)}
                 className={`flex items-center gap-2 rounded-full px-5 py-2 text-xs font-bold whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
+                    ? 'bg-accent text-white shadow-lg shadow-accent/25'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -383,7 +384,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
               </div>
 
               {item.tagline && (
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 italic text-sm text-orange-300 font-serif">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 italic text-sm text-accent font-serif">
                   "{item.tagline}"
                 </div>
               )}
@@ -456,8 +457,8 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
 
               {/* Awards */}
               {item.awards.length > 0 && (
-                <div className="p-5 rounded-3xl bg-orange-500/10 border border-orange-500/20 space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-orange-400">
+                <div className="p-5 rounded-3xl bg-accent/10 border border-accent/20 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
                     <Award className="h-4 w-4" />
                     <span>Recognition & Awards</span>
                   </div>
@@ -484,7 +485,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                     onClick={() => setSelectedSeasonNumber(s.seasonNumber)}
                     className={`rounded-full px-5 py-2 text-xs font-bold transition-all ${
                       selectedSeasonNumber === s.seasonNumber
-                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
+                        ? 'bg-accent text-white shadow-md shadow-accent/30'
                         : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
                     }`}
                   >
@@ -504,7 +505,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                       key={ep.episodeNumber}
                       className={`flex flex-col sm:flex-row items-start gap-4 p-4 rounded-3xl border transition-all ${
                         isWatched
-                          ? 'bg-orange-500/10 border-orange-500/30'
+                          ? 'bg-accent/10 border-accent/30'
                           : 'bg-white/5 border-white/10 hover:border-white/20'
                       }`}
                     >
@@ -542,8 +543,8 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                             }}
                             className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
                               isWatched
-                                ? 'bg-orange-500 text-white'
-                                : 'bg-white/10 text-white/70 hover:bg-orange-500 hover:text-white'
+                                ? 'bg-accent text-white'
+                                : 'bg-white/10 text-white/70 hover:bg-accent hover:text-white'
                             }`}
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -571,7 +572,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
               {item.cast.map((c) => (
                 <div
                   key={c.id}
-                  className="group rounded-2xl overflow-hidden border border-white/10 bg-white/5 hover:border-orange-500/40 transition-all flex flex-col"
+                  className="group rounded-2xl overflow-hidden border border-white/10 bg-white/5 hover:border-accent/40 transition-all flex flex-col"
                 >
                   <div className="aspect-[3/4] overflow-hidden bg-slate-900">
                     <img
@@ -582,10 +583,10 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                     />
                   </div>
                   <div className="p-3">
-                    <h4 className="text-xs font-bold text-white truncate group-hover:text-orange-400 transition-colors">
+                    <h4 className="text-xs font-bold text-white truncate group-hover:text-accent transition-colors">
                       {c.name}
                     </h4>
-                    <p className="text-[11px] text-orange-400 truncate mt-0.5">
+                    <p className="text-[11px] text-accent truncate mt-0.5">
                       {c.character}
                     </p>
                   </div>
@@ -598,10 +599,10 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
         {/* Tab 4: Languages */}
         {activeTab === 'languages' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-orange-500/10 border border-orange-500/20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-accent/10 border border-accent/20">
               <div>
                 <h3 className="font-editorial text-xl font-bold text-white flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-orange-400" />
+                  <Globe className="h-5 w-5 text-accent" />
                   35+ Global Audio & Subtitle Translations
                 </h3>
                 <p className="text-xs text-white/70 mt-1">
@@ -614,7 +615,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                 placeholder="Search languages..."
                 value={languageSearch}
                 onChange={(e) => setLanguageSearch(e.target.value)}
-                className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-orange-500"
+                className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-accent"
               />
             </div>
 
@@ -622,20 +623,20 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
               {/* Dubbed Audio */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-2">
-                  <Volume2 className="h-4 w-4 text-orange-400" />
+                  <Volume2 className="h-4 w-4 text-accent" />
                   Spoken Audio Tracks ({item.dubbedLanguages.length})
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {item.dubbedLanguages.map((lang) => (
+                  {item.dubbedLanguages.map((lang, index) => (
                     <div
-                      key={lang.code}
+                      key={`modal-dub-${lang.code}-${index}`}
                       className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10 text-xs"
                     >
                       <div>
                         <p className="font-bold text-white">
                           {lang.name}
                           {lang.isOriginal && (
-                            <span className="ml-1.5 rounded bg-orange-500/20 px-1.5 py-0.5 text-[9px] font-bold text-orange-400">
+                            <span className="ml-1.5 rounded bg-accent/20 px-1.5 py-0.5 text-[9px] font-bold text-accent">
                               Original
                             </span>
                           )}
@@ -657,9 +658,9 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                   Subtitle Tracks ({filteredSubtitles.length})
                 </h4>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {filteredSubtitles.map((sub) => (
+                  {filteredSubtitles.map((sub, index) => (
                     <div
-                      key={sub.code}
+                      key={`modal-sub-${sub.code}-${index}`}
                       className="p-3 rounded-2xl bg-white/5 border border-white/10 text-xs"
                     >
                       <p className="font-semibold text-white truncate">{sub.name}</p>
@@ -687,7 +688,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                   <img src={p.logoUrl} alt={p.name} className="h-8 w-8 rounded-xl object-cover" />
                   <div>
                     <h4 className="text-xs font-bold text-white">{p.name}</h4>
-                    <span className="text-[10px] uppercase font-bold text-orange-400">{p.type}</span>
+                    <span className="text-[10px] uppercase font-bold text-accent">{p.type}</span>
                   </div>
                 </div>
               ))}
@@ -721,7 +722,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                       }}
                       className={`p-2.5 rounded-xl text-xs font-bold border transition-all ${
                         watchlistItem?.status === s.id
-                          ? 'bg-orange-500 border-orange-400 text-white'
+                          ? 'bg-accent border-accent text-white'
                           : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
                       }`}
                     >
@@ -767,7 +768,7 @@ export const MediaDetailsModal: React.FC<MediaDetailsModalProps> = ({
                     if (!inWatchlist) addToWatchlist(item);
                     updatePersonalNote(item.id, e.target.value);
                   }}
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-white placeholder-white/40 focus:outline-none focus:border-orange-500"
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-white placeholder-white/40 focus:outline-none focus:border-accent"
                 />
               </div>
             </div>

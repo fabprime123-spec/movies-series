@@ -4,7 +4,6 @@ import { ActorItem, MediaItem } from '../types';
 import { fetchPopularActors, searchActors, fetchActorDetails } from '../services/tmdb';
 import { ActorCardSkeleton } from './Skeletons';
 import { Users, Star, Film, Sparkles, Search, Award, MapPin, Calendar, Loader2, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 
 interface ActorsViewProps {
   onSelectMedia: (item: MediaItem) => void;
@@ -145,7 +144,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-orange-400 uppercase tracking-widest mb-1.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-accent uppercase tracking-widest mb-1.5">
             <Users className="w-4 h-4" />
             <span>Creative Talent & Legends</span>
           </div>
@@ -159,13 +158,13 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
 
         {/* Live Search Input */}
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-accent" />
           <input
             type="text"
             placeholder="Search by actor name (e.g. Robert, Cillian)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-[#141622]/80 pl-10 pr-10 py-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all shadow-lg"
+            className="w-full rounded-2xl border border-white/10 bg-[#141622]/80 pl-10 pr-10 py-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all shadow-lg"
           />
           {searchQuery && (
             <button
@@ -184,7 +183,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
           <span>Found <strong className="text-white font-bold">{actors.length}</strong> performers matching "{searchQuery}"</span>
           <button
             onClick={() => setSearchQuery('')}
-            className="text-orange-400 hover:text-orange-300 transition-colors"
+            className="text-accent hover:opacity-80 transition-colors"
           >
             Clear Search
           </button>
@@ -211,7 +210,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
               <div
                 key={actor.id}
                 onClick={() => handleActorClick(actor)}
-                className="group cursor-pointer rounded-2xl overflow-hidden border border-white/10 bg-[#141622]/70 hover:border-orange-500/50 hover:bg-[#181a2b] transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10 flex flex-col"
+                className="group cursor-pointer rounded-2xl overflow-hidden border border-white/10 bg-[#141622]/70 hover:border-accent/50 hover:bg-[#181a2b] transition-all duration-300 hover:shadow-xl hover:shadow-accent/10 flex flex-col"
               >
                 <div className="relative aspect-[3/4] overflow-hidden bg-black/40">
                   <img
@@ -222,14 +221,14 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
                   <div className="absolute bottom-2 left-2 right-2">
-                    <span className="rounded-md bg-orange-500/80 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                    <span className="rounded-md bg-accent/80 backdrop-blur-sm px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
                       {actor.knownForDepartment || 'Acting'}
                     </span>
                   </div>
                 </div>
 
                 <div className="p-3 flex-1 flex flex-col justify-between">
-                  <h3 className="font-bold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1">
+                  <h3 className="font-bold text-xs sm:text-sm text-white group-hover:text-accent transition-colors line-clamp-1">
                     {actor.name}
                   </h3>
                   <div className="mt-1 flex flex-wrap gap-1">
@@ -253,11 +252,11 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
               <button
                 onClick={loadMoreActors}
                 disabled={loadingMore}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-semibold transition-all hover:border-orange-500/40 disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-semibold transition-all hover:border-accent/40 disabled:opacity-50"
               >
                 {loadingMore ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin text-orange-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-accent" />
                     <span>Loading more performers...</span>
                   </>
                 ) : (
@@ -270,23 +269,16 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
       )}
 
       {/* Actor Filmography Drawer / Modal */}
-      <AnimatePresence>
-        {selectedActor && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeModal}
-              className="fixed inset-0 bg-black/80 backdrop-blur-md"
-            />
+      {selectedActor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={closeModal}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300"
+          />
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/10 bg-[#0e121f] p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
-            >
+          <div
+            className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/10 bg-[#0e121f] p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto transition-all duration-300 transform scale-100 opacity-100"
+          >
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                 <img
                   src={selectedActor.profileUrl}
@@ -296,7 +288,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
                 />
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-lg bg-orange-500/20 border border-orange-400/30 px-2.5 py-0.5 text-xs font-bold text-orange-400">
+                    <span className="rounded-lg bg-accent/20 border border-accent/30 px-2.5 py-0.5 text-xs font-bold text-accent">
                       {selectedActor.knownForDepartment || 'Acting'}
                     </span>
                     {selectedActor.popularity != null && selectedActor.popularity > 0 && (
@@ -310,7 +302,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
                   </h2>
                   {actorDetails?.placeOfBirth && (
                     <p className="text-xs text-white/60 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-orange-400" />
+                      <MapPin className="w-3.5 h-3.5 text-accent" />
                       <span>{actorDetails.placeOfBirth}</span>
                     </p>
                   )}
@@ -331,7 +323,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
               {/* Biography if available */}
               {actorDetails?.biography && (
                 <div className="space-y-1.5 p-4 rounded-2xl bg-white/5 border border-white/10 text-xs text-white/70 leading-relaxed max-h-36 overflow-y-auto">
-                  <h4 className="font-bold text-white text-[11px] uppercase tracking-wider text-orange-400">Biography</h4>
+                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-accent">Biography</h4>
                   <p>{actorDetails.biography}</p>
                 </div>
               )}
@@ -339,7 +331,7 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
               {/* Filmography titles */}
               <div className="space-y-3 pt-2 border-t border-white/10">
                 <h3 className="font-['Outfit',sans-serif] text-sm font-bold text-white flex items-center gap-2">
-                  <Film className="h-4 w-4 text-orange-500" />
+                  <Film className="h-4 w-4 text-accent" />
                   <span>Featured Filmography & Releases ({actorFilmography.length})</span>
                 </h3>
 
@@ -358,14 +350,14 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
                           closeModal();
                           onSelectMedia(film);
                         }}
-                        className="group cursor-pointer rounded-xl overflow-hidden border border-white/10 bg-white/5 p-2 hover:border-orange-500/50 transition-all hover:bg-white/10"
+                        className="group cursor-pointer rounded-xl overflow-hidden border border-white/10 bg-white/5 p-2 hover:border-accent/50 transition-all hover:bg-white/10"
                       >
                         <img
                           src={film.posterUrl}
                           alt={film.title}
                           className="aspect-[2/3] w-full rounded-lg object-cover group-hover:scale-103 transition-transform"
                         />
-                        <h4 className="mt-2 text-xs font-bold text-white truncate group-hover:text-orange-400">
+                        <h4 className="mt-2 text-xs font-bold text-white truncate group-hover:text-accent">
                           {film.title}
                         </h4>
                         <p className="text-[10px] text-white/50">{film.releaseYear} • ⭐ {(film.ratings?.imdb ?? 0).toFixed(1)}</p>
@@ -385,10 +377,9 @@ export const ActorsView: React.FC<ActorsViewProps> = ({ onSelectMedia }) => {
                   Close
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
     </div>
   );
 };

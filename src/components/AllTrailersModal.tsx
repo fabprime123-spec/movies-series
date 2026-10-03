@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Play, Film, Sparkles, CheckCircle2, Clock, Tv, ExternalLink } from 'lucide-react';
 import { MediaItem, MediaVideo } from '../types';
+import { sortVideosByOfficialTrailerFirst } from '../utils/trailerSorter';
 
 interface AllTrailersModalProps {
   isOpen: boolean;
@@ -17,7 +18,7 @@ export const AllTrailersModal: React.FC<AllTrailersModalProps> = ({
 }) => {
   const allVideos: MediaVideo[] = React.useMemo(() => {
     if (media.videos && media.videos.length > 0) {
-      return media.videos;
+      return sortVideosByOfficialTrailerFirst(media.videos);
     }
     if (media.trailerYoutubeId) {
       return [
@@ -79,8 +80,8 @@ export const AllTrailersModal: React.FC<AllTrailersModalProps> = ({
     const t = type.toLowerCase();
     if (t.includes('trailer')) {
       return official
-        ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-        : 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+        ? 'bg-accent/25 text-accent border-accent/40 font-bold'
+        : 'bg-accent/15 text-accent border-accent/30';
     }
     if (t.includes('teaser')) {
       return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
@@ -107,7 +108,7 @@ export const AllTrailersModal: React.FC<AllTrailersModalProps> = ({
         {/* Top Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/[0.02]">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center text-accent flex-shrink-0">
               <Film className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -189,7 +190,7 @@ export const AllTrailersModal: React.FC<AllTrailersModalProps> = ({
           <div className="lg:col-span-4 flex flex-col bg-[#12141f]/80 p-4 sm:p-5 max-h-[400px] lg:max-h-none overflow-y-auto">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
               <span className="text-xs font-bold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
-                <Tv className="w-3.5 h-3.5 text-orange-400" />
+                <Tv className="w-3.5 h-3.5 text-accent" />
                 Available Trailers & Clips ({allVideos.length})
               </span>
             </div>
@@ -203,7 +204,7 @@ export const AllTrailersModal: React.FC<AllTrailersModalProps> = ({
                     onClick={() => setActiveVideo(video)}
                     className={`w-full text-left p-2.5 rounded-xl flex items-start gap-3 transition-all ${
                       isActive
-                        ? 'bg-orange-500/20 border border-orange-500/40 text-white shadow-lg shadow-orange-500/10'
+                        ? 'bg-accent/20 border border-accent/40 text-white shadow-lg shadow-accent/10'
                         : 'bg-white/5 hover:bg-white/10 border border-white/5 text-white/70 hover:text-white'
                     }`}
                   >
@@ -219,7 +220,7 @@ export const AllTrailersModal: React.FC<AllTrailersModalProps> = ({
                         <div
                           className={`w-6 h-6 rounded-full flex items-center justify-center ${
                             isActive
-                              ? 'bg-orange-500 text-white'
+                              ? 'bg-accent text-white'
                               : 'bg-black/60 text-white/80'
                           }`}
                         >

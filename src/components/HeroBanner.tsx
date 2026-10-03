@@ -17,7 +17,6 @@ import { useWatchlist } from '../context/WatchlistContext';
 import { useTrailer } from '../context/TrailerContext';
 import { useTheme } from '../context/ThemeContext';
 import { FilmGrainOverlay } from './FilmGrainOverlay';
-import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 
 interface HeroBannerProps {
@@ -92,112 +91,100 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
     >
       {/* Background Backdrop Image with Crossfade */}
       <div className="relative h-[480px] sm:h-[600px] md:h-[720px] w-full overflow-hidden bg-card">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentItem.id}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="absolute inset-0 h-full w-full"
-          >
-            <img
-              src={currentItem.backdropUrl || currentItem.posterUrl}
-              alt={currentItem.title}
-              referrerPolicy="no-referrer"
-              className="h-full w-full object-cover object-center filter brightness-90"
-            />
-            {/* 35mm Cinematic Film Grain Texture */}
-            <FilmGrainOverlay opacity={0.36} />
-            
-            {/* Multi-layered glassmorphic & vignette gradients */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-          </motion.div>
-        </AnimatePresence>
+        <div
+          key={currentItem.id}
+          className="absolute inset-0 h-full w-full transition-opacity duration-700 ease-out"
+        >
+          <img
+            src={currentItem.backdropUrl || currentItem.posterUrl}
+            alt={currentItem.title}
+            referrerPolicy="no-referrer"
+            className="h-full w-full object-cover object-center filter brightness-90 transition-transform duration-1000 transform scale-100"
+          />
+          {/* 35mm Cinematic Film Grain Texture */}
+          <FilmGrainOverlay opacity={0.36} />
+          
+          {/* Multi-layered glassmorphic & vignette gradients */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        </div>
 
         {/* Content Container */}
         <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end p-6 sm:p-10 md:p-14">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentItem.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="max-w-2xl space-y-4"
-            >
-              {/* Minimalist Metadata Pill */}
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-2 rounded-full bg-transparent px-3.5 py-1 text-xs font-medium text-foreground backdrop-blur-md border border-border/10 shadow-sm">
-                  <span className="flex items-center gap-1 font-bold text-amber-400 text-shadow-2xl">
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    {(currentItem.ratings?.imdb ?? 0).toFixed(1)}
-                  </span>
-                  <span>•</span>
-                  <span>{currentItem.releaseYear}</span>
-                  <span>•</span>
-                  <span>{currentItem.type === 'tv' ? 'Series' : currentItem.genres?.[0] || 'Cinema'}</span>
-                  {currentItem.runtimeMinutes && (
-                    <>
-                      <span>•</span>
-                      <span>{Math.floor(currentItem.runtimeMinutes / 60)}h {currentItem.runtimeMinutes % 60}m</span>
-                    </>
-                  )}
+          <div
+            key={currentItem.id}
+            className="max-w-2xl space-y-4 transition-all duration-500 ease-out transform translate-y-0 opacity-100"
+          >
+            {/* Minimalist Metadata Pill */}
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-2 rounded-full bg-transparent px-3.5 py-1 text-xs font-medium text-foreground backdrop-blur-md border border-border/10 shadow-sm">
+                <span className="flex items-center gap-1 font-bold text-amber-400 text-shadow-2xl">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  {(currentItem.ratings?.imdb ?? 0).toFixed(1)}
                 </span>
-              </div>
-
-              {/* Title & Concise Logline */}
-              <div className="space-y-2">
-                <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground drop-shadow-md leading-tight">
-                  {currentItem.title}
-                </h1>
-                {currentItem.tagline && (
-                  <p className="text-sm sm:text-base font-serif italic text-colored line-clamp-1 text-shadow-2xl">
-                    "{currentItem.tagline}"
-                  </p>
+                <span>•</span>
+                <span>{currentItem.releaseYear}</span>
+                <span>•</span>
+                <span>{currentItem.type === 'tv' ? 'Series' : currentItem.genres?.[0] || 'Cinema'}</span>
+                {currentItem.runtimeMinutes && (
+                  <>
+                    <span>•</span>
+                    <span>{Math.floor(currentItem.runtimeMinutes / 60)}h {currentItem.runtimeMinutes % 60}m</span>
+                  </>
                 )}
-              </div>
+              </span>
+            </div>
 
-              {/* Overview snippet - concise */}
-              <p className="line-clamp-2 text-xs sm:text-sm text-muted leading-relaxed max-w-xl font-bold">
-                {currentItem.overview}
-              </p>
+            {/* Title & Concise Logline */}
+            <div className="space-y-2">
+              <h1 className="font-['Outfit',sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-foreground drop-shadow-md leading-tight">
+                {currentItem.title}
+              </h1>
+              {currentItem.tagline && (
+                <p className="text-sm sm:text-base font-serif italic text-colored line-clamp-1 text-shadow-2xl">
+                  "{currentItem.tagline}"
+                </p>
+              )}
+            </div>
 
-              {/* Focused Action Buttons */}
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  id={`hero-play-trailer-${currentItem.id}`}
-                  onClick={handleTrailerClick}
-                  className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-95 px-5 sm:px-6 py-3 text-xs sm:text-sm font-bold text-white hover:scale-102 active:scale-98 transition-all`}
-                >
-                  <Play className="h-4 w-4 fill-white" />
-                  <span>Watch Trailer</span>
-                </button>
+            {/* Overview snippet - concise */}
+            <p className="line-clamp-2 text-xs sm:text-sm text-muted leading-relaxed max-w-xl font-bold">
+              {currentItem.overview}
+            </p>
 
-                <button
-                  id={`hero-view-details-${currentItem.id}`}
-                  onClick={handleDetailsClick}
-                  className="flex items-center gap-2 rounded-2xl bg-muted hover:bg-muted/60 backdrop-blur-md px-5 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-white border border-white/15 transition-all active:scale-98"
-                >
-                  <Info className="h-4 w-4" />
-                  <span>Details</span>
-                </button>
+            {/* Focused Action Buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                id={`hero-play-trailer-${currentItem.id}`}
+                onClick={handleTrailerClick}
+                className={`flex items-center gap-2 rounded-2xl bg-gradient-to-r ${accentConfig.gradient} hover:opacity-95 px-5 sm:px-6 py-3 text-xs sm:text-sm font-bold text-white hover:scale-102 active:scale-98 transition-all`}
+              >
+                <Play className="h-4 w-4 fill-white" />
+                <span>Watch Trailer</span>
+              </button>
 
-                <button
-                  id={`hero-watchlist-toggle-${currentItem.id}`}
-                  onClick={handleWatchlistToggle}
-                  className={`flex h-11 w-11 items-center justify-center rounded-2xl backdrop-blur-xl border transition-all active:scale-90 ${
-                    inWatchlist
-                      ? 'bg-amber-500 border-amber-400 text-black shadow-md'
-                      : 'bg-black/50 border-white/15 text-white hover:bg-white/20'
-                  }`}
-                  title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-                >
-                  {inWatchlist ? <BookmarkCheck className="h-4 w-4 fill-current" /> : <Bookmark className="h-4 w-4" />}
-                </button>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+              <button
+                id={`hero-view-details-${currentItem.id}`}
+                onClick={handleDetailsClick}
+                className="flex items-center gap-2 rounded-2xl bg-muted hover:bg-muted/60 backdrop-blur-md px-5 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-white border border-white/15 transition-all active:scale-98"
+              >
+                <Info className="h-4 w-4" />
+                <span>Details</span>
+              </button>
+
+              <button
+                id={`hero-watchlist-toggle-${currentItem.id}`}
+                onClick={handleWatchlistToggle}
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl backdrop-blur-xl border transition-all active:scale-90 ${
+                  inWatchlist
+                    ? 'bg-amber-500 border-amber-400 text-black shadow-md'
+                    : 'bg-black/50 border-white/15 text-white hover:bg-white/20'
+                }`}
+                title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+              >
+                {inWatchlist ? <BookmarkCheck className="h-4 w-4 fill-current" /> : <Bookmark className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Carousel Slide Indicators & Navigation Arrows */}

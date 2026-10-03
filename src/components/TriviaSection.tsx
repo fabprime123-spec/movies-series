@@ -140,10 +140,10 @@ export const TriviaSection: React.FC<TriviaProps> = ({
 
             <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
               <span className="text-xs text-white/50 flex items-center gap-1 mb-1">
-                <Award className="w-3.5 h-3.5 text-orange-400" />
+                <Award className="w-3.5 h-3.5 text-accent" />
                 Box Office Multiplier
               </span>
-              <p className="text-xl sm:text-2xl font-black text-orange-400 font-['Outfit',sans-serif]">
+              <p className="text-xl sm:text-2xl font-black text-accent font-['Outfit',sans-serif]">
                 {profitMultiplier ? `${profitMultiplier}x` : 'N/A'}
               </p>
               <p className="text-[10px] text-white/40 mt-1">

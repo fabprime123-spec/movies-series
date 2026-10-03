@@ -10,7 +10,7 @@ import { useCountryFilter } from '../context/CountryFilterContext';
 import { useSoundtrack } from '../context/SoundtrackContext';
 import { FilmGrainOverlay } from '../components/FilmGrainOverlay';
 import { MediaImageGallery } from '../components/MediaImageGallery';
-import { fetchMediaDetails, fetchSeasonEpisodes } from '../services/tmdb';
+import { fetchMediaDetails } from '../services/tmdb';
 import { MediaDetailsSkeleton } from '../components/Skeletons';
 import { MediaCard } from '../components/MediaCard';
 import { AllTrailersModal } from '../components/AllTrailersModal';
@@ -19,7 +19,7 @@ import { TriviaSection } from '../components/TriviaSection';
 import { ComposerSpotlight } from '../components/ComposerSpotlight';
 import { SoundtrackSection } from '../components/SoundtrackSection';
 import { CuratedRecommendationRows } from '../components/CuratedRecommendationRows';
-import { motion, AnimatePresence } from 'motion/react';
+import { sortVideosByOfficialTrailerFirst } from '../utils/trailerSorter';
 
 export const DetailsPage: React.FC = () => {
   const { type = 'movie', id = '' } = useParams<{ type: string; id: string }>();
@@ -31,9 +31,6 @@ export const DetailsPage: React.FC = () => {
 
   const [item, setItem] = useState<MediaItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number>(1);
-  const [seasonEpisodes, setSeasonEpisodes] = useState<Episode[]>([]);
-  const [loadingEpisodes, setLoadingEpisodes] = useState<boolean>(false);
   const [languageSearch, setLanguageSearch] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [isAllTrailersOpen, setIsAllTrailersOpen] = useState<boolean>(false);
@@ -45,6 +42,7 @@ export const DetailsPage: React.FC = () => {
   const subScrollRef = useRef<HTMLDivElement>(null);
   const castScrollRef = useRef<HTMLDivElement>(null);
   const trailerScrollRef = useRef<HTMLDivElement>(null);
+  const seasonsScrollRef = useRef<HTMLDivElement>(null);
 
   const { 
     isInWatchlist, 
@@ -74,13 +72,6 @@ export const DetailsPage: React.FC = () => {
         if (isMounted) {
           setItem(data);
           addToHistory(data);
-          if (data.seasons && data.seasons.length > 0) {
-            const firstSeason = data.seasons.find((s) => s.seasonNumber > 0) || data.seasons[0];
-            setSelectedSeasonNumber(firstSeason.seasonNumber);
-            if (firstSeason.episodes && firstSeason.episodes.length > 0) {
-              setSeasonEpisodes(firstSeason.episodes);
-            }
-          }
         }
       } catch (err) {
         console.error('Error fetching media details:', err);
@@ -94,41 +85,11 @@ export const DetailsPage: React.FC = () => {
     };
   }, [id, type]);
 
-  // Fetch episodes when season selection changes
-  useEffect(() => {
-    if (!item || (item.type !== 'tv' && item.type !== 'anime')) return;
-    let isMounted = true;
-    async function loadSeason() {
-      // Check if already present in item.seasons
-      const seasonObj = item?.seasons?.find((s) => s.seasonNumber === selectedSeasonNumber);
-      if (seasonObj && seasonObj.episodes && seasonObj.episodes.length > 0) {
-        setSeasonEpisodes(seasonObj.episodes);
-        return;
-      }
-
-      setLoadingEpisodes(true);
-      try {
-        const episodes = await fetchSeasonEpisodes(item.id, selectedSeasonNumber);
-        if (isMounted && episodes.length > 0) {
-          setSeasonEpisodes(episodes);
-        }
-      } catch (err) {
-        console.warn('Error fetching season episodes:', err);
-      } finally {
-        if (isMounted) setLoadingEpisodes(false);
-      }
-    }
-    loadSeason();
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedSeasonNumber, item?.id]);
-
-  // Compile all trailers and video previews for 1-row slider (called unconditionally before early returns)
+  // Compile all trailers and video previews for 1-row slider (sorted: official trailer first, then others)
   const allVideos: MediaVideo[] = React.useMemo(() => {
     if (!item) return [];
     if (item.videos && item.videos.length > 0) {
-      return item.videos;
+      return sortVideosByOfficialTrailerFirst(item.videos);
     }
     const list: MediaVideo[] = [];
     if (item.trailerYoutubeId) {
@@ -165,7 +126,7 @@ export const DetailsPage: React.FC = () => {
         official: true,
       });
     }
-    return list;
+    return sortVideosByOfficialTrailerFirst(list);
   }, [item]);
 
   if (loading && !item) {
@@ -182,7 +143,7 @@ export const DetailsPage: React.FC = () => {
         </p>
         <button
           onClick={() => navigate('/')}
-          className="px-5 py-2.5 rounded-xl bg-orange-500 text-sm font-semibold text-white hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/25"
+          className={`px-5 py-2.5 rounded-xl bg-gradient-to-r ${accentConfig.gradient} text-sm font-semibold text-white shadow-lg shadow-accent/25 hover:opacity-90 transition-all`}
         >
           Return to Front Page
         </button>
@@ -223,14 +184,14 @@ export const DetailsPage: React.FC = () => {
   );
 
   return (
-    <div className="w-full min-h-screen text-white pb-24 selection:bg-orange-500 selection:text-white">
+    <div className="w-full min-h-screen text-white pb-24 selection:bg-accent selection:text-white">
       
       {/* ========================================================================= */}
       {/* 1. MOBILE HERO VIEW (Directly matching user mobile screenshot layout)    */}
       {/* ========================================================================= */}
       <div className="block md:hidden w-full">
-        {/* Tall Backdrop Banner */}
-        <div className="relative w-full h-[360px] sm:h-[400px] overflow-hidden">
+        {/* Tall Backdrop Banner (max value 90vh) */}
+        <div className="relative w-full h-[360px] sm:h-[400px] max-h-[90vh] overflow-hidden">
           <img
             src={item.backdropUrl || item.posterUrl}
             alt={item.title}
@@ -372,8 +333,8 @@ export const DetailsPage: React.FC = () => {
                 }}
                 className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 shadow-md active:scale-95 transition-all"
               >
-                <Film className="w-4 h-4 text-orange-400" />
-                <span>All Trailers & Clips ({item.videos?.length || 1})</span>
+                <Film className="w-4 h-4 text-accent" />
+                <span>All Trailers & Clips ({allVideos.length || 1})</span>
               </button>
             </div>
           )}
@@ -381,9 +342,9 @@ export const DetailsPage: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. LAPTOP & DESKTOP HERO VIEW (Responsive backdrop, refined poster size)   */}
+      {/* 2. LAPTOP & DESKTOP HERO VIEW (max value 90vh for backdrop hero banner)    */}
       {/* ========================================================================= */}
-      <div className="hidden md:flex relative w-full min-h-[460px] lg:min-h-[500px] xl:min-h-[540px] max-h-[65vh] flex-col justify-end overflow-hidden border-b border-white/10">
+      <div className="hidden md:flex relative w-full min-h-[460px] lg:min-h-[500px] xl:min-h-[540px] max-h-[90vh] flex-col justify-end overflow-hidden border-b border-white/10">
         
         {/* Cinematic Backdrop Image with High Brightness and Crisp Colors */}
         <div className="absolute inset-0 z-0">
@@ -405,7 +366,7 @@ export const DetailsPage: React.FC = () => {
         <div className="relative z-20 w-full px-6 sm:px-8 lg:px-12 pt-6 mb-auto flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-xl bg-black/60 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md border border-white/15 hover:bg-orange-500/20 hover:border-orange-500/40 hover:text-orange-300 transition-all shadow-md"
+            className="inline-flex items-center gap-2 rounded-xl bg-black/60 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-md border border-white/15 hover:bg-accent/20 hover:border-accent/40 hover:text-accent transition-all shadow-md"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Back to Issue</span>
@@ -483,7 +444,7 @@ export const DetailsPage: React.FC = () => {
                 {item.trailerYoutubeId ? (
                   <button
                     onClick={handleTrailerClick}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:scale-102 active:scale-98 transition-all"
+                    className={`flex items-center gap-2 rounded-xl bg-gradient-to-r ${accentConfig.gradient} px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-accent/25 hover:scale-102 active:scale-98 transition-all`}
                   >
                     <Play className="h-4 w-4 fill-white" />
                     <span>Play Trailer</span>
@@ -491,12 +452,12 @@ export const DetailsPage: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => {
-                      document.getElementById('section-episodes')?.scrollIntoView({ behavior: 'smooth' });
+                      document.getElementById('section-seasons')?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:scale-102 active:scale-98 transition-all"
+                    className={`flex items-center gap-2 rounded-xl bg-gradient-to-r ${accentConfig.gradient} px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-accent/25 hover:scale-102 active:scale-98 transition-all`}
                   >
                     <Play className="h-4 w-4 fill-white" />
-                    <span>View Episodes</span>
+                    <span>Explore Seasons</span>
                   </button>
                 )}
 
@@ -508,11 +469,11 @@ export const DetailsPage: React.FC = () => {
                   }}
                   className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border transition-all ${
                     inWatchlist
-                      ? 'bg-amber-500 border-amber-400 text-black shadow-md'
+                      ? `${accentConfig.badgeBg} border-accent text-accent shadow-md`
                       : 'bg-black/50 border-white/15 text-white/90 hover:bg-white/15'
                   }`}
                 >
-                  <Bookmark className={`h-4 w-4 ${inWatchlist ? 'fill-black' : ''}`} />
+                  <Bookmark className={`h-4 w-4 ${inWatchlist ? 'fill-current' : ''}`} />
                   <span>{inWatchlist ? 'Saved in Watchlist' : 'Add to Watchlist'}</span>
                 </button>
 
@@ -524,7 +485,7 @@ export const DetailsPage: React.FC = () => {
                   className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/80 hover:bg-white/10 hover:text-white transition-all"
                   title="Original Soundtrack & Score"
                 >
-                  <Headphones className="h-4 w-4 text-orange-400" />
+                  <Headphones className="h-4 w-4 text-accent" />
                   <span>Soundtrack</span>
                 </button>
 
@@ -536,7 +497,7 @@ export const DetailsPage: React.FC = () => {
                   className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold border border-white/15 bg-black/50 text-white/80 hover:bg-white/10 hover:text-white transition-all"
                   title="Photos and Stills"
                 >
-                  <ImageIcon className="h-4 w-4 text-amber-400" />
+                  <ImageIcon className="h-4 w-4 text-accent" />
                   <span>Gallery</span>
                 </button>
               </div>
@@ -558,7 +519,7 @@ export const DetailsPage: React.FC = () => {
           {[
             { id: 'section-overview', label: 'Story & Details', icon: Film },
             ...((item.type === 'tv' || item.type === 'anime' || seasons.length > 0)
-              ? [{ id: 'section-episodes', label: `Episodes (${item.totalEpisodes || seasons.reduce((a, c) => a + c.episodeCount, 0) || 12})`, icon: Layers }]
+              ? [{ id: 'section-seasons', label: `Seasons & Specials (${seasons.length})`, icon: Layers }]
               : []),
             ...(allVideos.length > 0
               ? [{ id: 'section-trailers', label: `Trailers (${allVideos.length})`, icon: Play }]
@@ -595,7 +556,7 @@ export const DetailsPage: React.FC = () => {
                 }}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white/5 text-white/75 hover:bg-white/15 hover:text-white border border-white/10 transition-all shrink-0 active:scale-95"
               >
-                <Icon className="w-3.5 h-3.5 text-orange-400" />
+                <Icon className="w-3.5 h-3.5 text-accent" />
                 <span>{sec.label}</span>
               </button>
             );
@@ -608,7 +569,7 @@ export const DetailsPage: React.FC = () => {
             <div className="lg:col-span-2 space-y-6">
               <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-4">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Film className="w-5 h-5 text-orange-400" />
+                  <Film className="w-5 h-5 text-accent" />
                   <span>The Storyline Synopsis</span>
                 </h3>
                 <p className="text-sm sm:text-base leading-relaxed text-white/80 font-serif">
@@ -708,12 +669,12 @@ export const DetailsPage: React.FC = () => {
               <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <ImageIcon className="w-4 h-4 text-orange-400" />
+                    <ImageIcon className="w-4 h-4 text-accent" />
                     <span>Media Photo Gallery</span>
                   </h3>
                   <button
                     onClick={() => navigate(`/gallery/${item.type}/${item.id}`)}
-                    className="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1"
+                    className="text-xs text-accent hover:text-accent-hover font-semibold flex items-center gap-1"
                   >
                     <span>Full Gallery Page →</span>
                   </button>
@@ -737,130 +698,145 @@ export const DetailsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Section 2: Episodes Section (Rendered whenever series has episodes/seasons) */}
+        {/* Section 2: Seasons & Specials Cards (No episode list on detail screen; only cards for season & special linking to /season) */}
         {(item.type === 'tv' || item.type === 'anime' || seasons.length > 0) && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
-            <div id="section-episodes" className="scroll-mt-28 space-y-6">
-            
-            {/* Season Selector */}
-            {seasons.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {seasons.map((season) => (
-                  <button
-                    key={season.seasonNumber}
-                    onClick={() => setSelectedSeasonNumber(season.seasonNumber)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                      selectedSeasonNumber === season.seasonNumber
-                        ? 'bg-orange-500 text-white font-bold shadow-md shadow-orange-500/20'
-                        : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                    }`}
+          <div id="section-seasons" className="scroll-mt-28 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 px-4 sm:px-8 lg:px-12">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      All Seasons & Specials ({seasons.length})
+                    </h3>
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
+                      1-Row Slider
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/50">
+                    Select any broadcast season or special to view its complete episode catalogue
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/season?id=${item.id}&type=${item.type}`}
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-accent/15 hover:bg-accent/25 border border-accent/30 text-xs font-semibold text-accent transition-all mr-2"
+                >
+                  <Tv className="w-3.5 h-3.5" />
+                  <span>Full Season Directory →</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => seasonsScrollRef.current?.scrollBy({ left: -360, behavior: 'smooth' })}
+                  className="p-2 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                  aria-label="Scroll Seasons Left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => seasonsScrollRef.current?.scrollBy({ left: 360, behavior: 'smooth' })}
+                  className="p-2 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/15 transition-all active:scale-95"
+                  aria-label="Scroll Seasons Right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 1-Row Horizontal Slider Container for Season & Special Cards */}
+            <div
+              ref={seasonsScrollRef}
+              className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12 carousel-contain"
+            >
+              {seasons.map((season) => {
+                const isSpecial = season.seasonNumber === 0;
+                const displayName = season.name || (isSpecial ? 'Specials' : `Season ${season.seasonNumber}`);
+                const posterImg = season.posterUrl || item.backdropUrl || item.posterUrl;
+
+                return (
+                  <div
+                    key={`season-card-${season.seasonNumber}`}
+                    onClick={() => {
+                      navigate(`/season?id=${item.id}&type=${item.type}&season=${season.seasonNumber}`);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="w-[220px] sm:w-[260px] md:w-[280px] shrink-0 snap-start group flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#141622]/80 backdrop-blur-xl p-3.5 shadow-lg hover:border-accent/50 hover:shadow-accent/15 transition-all duration-300 cursor-pointer select-none text-left"
                   >
-                    Season {season.seasonNumber} ({season.episodeCount} Episodes)
-                  </button>
-                ))}
-              </div>
-            )}
+                    <div>
+                      {/* Season Poster/Banner Container */}
+                      <div className="relative aspect-[16/10] w-full rounded-xl overflow-hidden bg-slate-900 mb-3 border border-white/10">
+                        <img
+                          src={posterImg}
+                          alt={displayName}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
-            {loadingEpisodes ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-              </div>
-            ) : seasonEpisodes.length > 0 ? (
-              /* GUARANTEED AT LEAST 2 COLUMNS IN ANY SCREEN (grid-cols-2 even on mobile!) */
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {seasonEpisodes.map((ep) => {
-                  const isWatched = (watchlistItem?.watchedEpisodes || 0) >= ep.episodeNumber;
-
-                  return (
-                    <div
-                      key={ep.episodeNumber}
-                      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#141622]/80 backdrop-blur-xl p-2.5 sm:p-3 shadow-lg hover:border-orange-500/40 hover:shadow-orange-500/10 transition-all"
-                    >
-                      <div>
-                        {/* Episode Thumbnail */}
-                        <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black/60 mb-2">
-                          <img
-                            src={ep.stillUrl || item.backdropUrl || item.posterUrl}
-                            alt={ep.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                          
-                          {/* Episode Badge */}
-                          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] sm:text-xs font-bold text-orange-400 border border-orange-500/30">
-                            EP {ep.episodeNumber}
-                          </div>
-
-                          {/* Runtime */}
-                          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-white/80">
-                            {ep.runtimeMinutes}m
-                          </div>
+                        {/* Special or Season Tag */}
+                        <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-bold text-accent border border-accent/30">
+                          {isSpecial ? 'SPECIALS' : `SEASON ${season.seasonNumber}`}
                         </div>
 
-                        {/* Title & Air Date */}
-                        <div className="space-y-1">
-                          <h4 className="font-semibold text-xs sm:text-sm text-white line-clamp-1 group-hover:text-orange-400 transition-colors">
-                            {ep.title}
-                          </h4>
-                          {ep.airDate && (
-                            <p className="text-[10px] text-white/40">{ep.airDate}</p>
-                          )}
-                          <p className="text-[11px] text-white/60 line-clamp-2 mt-1 hidden sm:block">
-                            {ep.overview}
-                          </p>
+                        {/* Episode Count */}
+                        <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-[10px] font-mono text-white/90">
+                          {season.episodeCount} Episodes
                         </div>
                       </div>
 
-                      {/* Episode Action: Mark Watched */}
-                      <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between">
-                        <span className="text-[10px] text-amber-400 flex items-center gap-1 font-semibold">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          {ep.voteAverage ? ep.voteAverage.toFixed(1) : '8.0'}
-                        </span>
+                      {/* Title & Metadata */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="font-bold text-sm sm:text-base text-white group-hover:text-accent transition-colors line-clamp-1">
+                            {displayName}
+                          </h4>
+                          {season.airYear && (
+                            <span className="text-[11px] text-white/50 shrink-0 font-medium">{season.airYear}</span>
+                          )}
+                        </div>
 
-                        <button
-                          onClick={() => {
-                            if (!inWatchlist) addToWatchlist(item, 'watching');
-                            updateEpisodeProgress(item.id, isWatched ? ep.episodeNumber - 1 : ep.episodeNumber);
-                          }}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
-                            isWatched
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>{isWatched ? 'Watched' : 'Mark'}</span>
-                        </button>
+                        <p className="text-[11px] text-white/60 line-clamp-2 leading-relaxed">
+                          {season.overview || `${item.title} ${displayName} complete episode broadcasts and specials archive.`}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-8 text-center space-y-3">
-                <Tv className="w-10 h-10 text-white/30 mx-auto" />
-                <p className="text-sm text-white/70">Episode list is being prepared from broadcast archives.</p>
-              </div>
-            )}
+
+                    {/* Action Button */}
+                    <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-accent group-hover:underline flex items-center gap-1">
+                        <span>View Episodes</span>
+                        <span>→</span>
+                      </span>
+                      <span className="p-1.5 rounded-lg bg-white/5 group-hover:bg-accent/20 group-hover:text-accent text-white/60 transition-colors">
+                        <Tv className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
         {/* Section: Official Trailers & Previews (1-Row Slider) */}
         {allVideos.length > 0 && (
           <div id="section-trailers" className="scroll-mt-28 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3 px-4 sm:px-8 lg:px-12">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
-                  <Play className="w-5 h-5 fill-orange-400" />
+                <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
+                  <Play className="w-5 h-5 fill-accent" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-base sm:text-lg font-bold text-white">
                       Official Trailers & Previews ({allVideos.length})
                     </h3>
-                    <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
                       1-Row Slider
                     </span>
                   </div>
@@ -874,7 +850,7 @@ export const DetailsPage: React.FC = () => {
                   onClick={() => setIsAllTrailersOpen(true)}
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all mr-2"
                 >
-                  <Film className="w-3.5 h-3.5 text-orange-400" />
+                  <Film className="w-3.5 h-3.5 text-accent" />
                   <span>Theater Mode</span>
                 </button>
                 <button
@@ -907,7 +883,7 @@ export const DetailsPage: React.FC = () => {
                   onClick={() => playTrailer(vid.key, vid.name)}
                   className="w-[260px] sm:w-[310px] shrink-0 snap-start group flex flex-col cursor-pointer select-none text-left"
                 >
-                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-900 border border-white/10 group-hover:border-orange-500/50 shadow-md group-hover:shadow-xl transition-all">
+                  <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-900 border border-white/10 group-hover:border-accent/50 shadow-md group-hover:shadow-xl transition-all">
                     <img
                       src={`https://img.youtube.com/vi/${vid.key}/hqdefault.jpg`}
                       alt={vid.name}
@@ -918,13 +894,13 @@ export const DetailsPage: React.FC = () => {
 
                     {/* Centered Play Button with animation */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-11 h-11 rounded-full bg-orange-500/90 text-white flex items-center justify-center shadow-lg group-hover:scale-115 group-hover:bg-orange-500 transition-all">
+                      <div className="w-11 h-11 rounded-full bg-accent/90 text-white flex items-center justify-center shadow-lg group-hover:scale-115 group-hover:bg-accent transition-all">
                         <Play className="w-5 h-5 fill-white ml-0.5" />
                       </div>
                     </div>
 
                     {/* Video Type Badge */}
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-bold text-orange-400 border border-orange-500/30">
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[10px] font-bold text-accent border border-accent/30">
                       {vid.type || 'Trailer'}
                     </span>
 
@@ -934,13 +910,13 @@ export const DetailsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1 mt-2.5">
+                  <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-accent transition-colors line-clamp-1 mt-2.5">
                     {vid.name}
                   </h4>
                   <p className="text-[11px] text-white/50 line-clamp-1 mt-0.5 flex items-center gap-1.5">
                     <span>{vid.official ? 'Official Video' : 'Promotional'}</span>
                     <span>•</span>
-                    <span className="text-orange-400/90 font-medium">Click to watch</span>
+                    <span className="text-accent/90 font-medium">Click to watch</span>
                   </p>
                 </div>
               ))}
@@ -952,13 +928,13 @@ export const DetailsPage: React.FC = () => {
         <div id="section-cast" className="scroll-mt-28 space-y-6">
           <div className="flex items-center justify-between border-b border-white/10 pb-3 px-4 sm:px-8 lg:px-12">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
+              <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
                 <Users className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-base sm:text-lg font-bold text-white">Leading Cast & Performers ({item.cast.length})</h3>
-                  <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                  <span className="text-[10px] font-bold text-accent uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
                     1-Row Slider
                   </span>
                 </div>
@@ -999,7 +975,7 @@ export const DetailsPage: React.FC = () => {
                 title={`View ${actor.name}'s profile and filmography`}
               >
                 {/* Circular Cast Card Avatar */}
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-slate-800 border-2 border-white/15 group-hover:border-orange-500 group-hover:scale-105 group-active:scale-95 transition-all shadow-xl relative">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-slate-800 border-2 border-white/15 group-hover:border-accent group-hover:scale-105 group-active:scale-95 transition-all shadow-xl relative">
                   <img
                     src={actor.profileUrl}
                     alt={actor.name}
@@ -1009,10 +985,10 @@ export const DetailsPage: React.FC = () => {
                 </div>
                 
                 {/* Name & Character below circle */}
-                <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1 mt-2.5 w-full text-center">
+                <h4 className="font-semibold text-xs sm:text-sm text-white group-hover:text-accent transition-colors line-clamp-1 mt-2.5 w-full text-center">
                   {actor.name}
                 </h4>
-                <p className="text-[11px] text-orange-400/90 line-clamp-1 mt-0.5 w-full text-center">
+                <p className="text-[11px] text-accent/90 line-clamp-1 mt-0.5 w-full text-center">
                   {actor.character}
                 </p>
               </button>
@@ -1068,7 +1044,7 @@ export const DetailsPage: React.FC = () => {
             <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <Volume2 className="w-5 h-5 text-orange-400" />
+                  <Volume2 className="w-5 h-5 text-accent" />
                   <div>
                     <h3 className="text-base font-bold text-white">
                       Spoken Audio & Dubbed Tracks ({item.dubbedLanguages.length})
@@ -1076,22 +1052,22 @@ export const DetailsPage: React.FC = () => {
                     <p className="text-xs text-white/40">Studio dubbings & original broadcast audio tracks</p>
                   </div>
                 </div>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
                   Multilingual Theatrical & Streaming Mix
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {item.dubbedLanguages.map((lang) => (
+                {item.dubbedLanguages.map((lang, index) => (
                   <div
-                    key={lang.code}
-                    className={`flex items-center justify-between p-3 rounded-xl border border-white/10 hover:border-orange-500/30 transition-all ${lang.name == "English" ? "bg-background" : "bg-white/5"}`}
+                    key={`page-dub-${lang.code}-${index}`}
+                    className={`flex items-center justify-between p-3 rounded-xl border border-white/10 hover:border-accent/30 transition-all ${lang.name == "English" ? "bg-background" : "bg-white/5"}`}
                   >
                     <div>
                       <p className="text-xs sm:text-sm font-semibold text-white flex items-center gap-1.5">
                         <span>{lang.name}</span>
                         {lang.isOriginal && (
-                          <span className="px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 text-[9px] font-bold border border-orange-500/30">
+                          <span className="px-1.5 py-0.2 rounded bg-accent/20 text-accent text-[9px] font-bold border border-accent/30">
                             ORIGINAL
                           </span>
                         )}
@@ -1156,9 +1132,9 @@ export const DetailsPage: React.FC = () => {
                 ref={subScrollRef}
                 className="flex items-center gap-3 overflow-x-auto scrollbar-none py-2 px-1 flex-nowrap snap-x"
               >
-                {filteredSubtitles.map((sub) => (
+                {filteredSubtitles.map((sub, index) => (
                   <div
-                    key={sub.code}
+                    key={`page-sub-${sub.code}-${index}`}
                     className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs shrink-0 snap-start hover:border-amber-500/40 hover:bg-white/10 transition-all min-w-[170px]"
                   >
                     <div>
@@ -1189,7 +1165,7 @@ export const DetailsPage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
             <div id="section-providers" className="scroll-mt-28 rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-6">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Tv className="w-5 h-5 text-orange-400" />
+                <Tv className="w-5 h-5 text-accent" />
                 <span>Where to Stream & Watch</span>
               </h3>
 
@@ -1197,7 +1173,7 @@ export const DetailsPage: React.FC = () => {
                 {item.streamingProviders.map((provider, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-orange-500/30 transition-all"
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-accent/30 transition-all"
                   >
                     <div className="flex items-center gap-3">
                       <img
@@ -1207,11 +1183,11 @@ export const DetailsPage: React.FC = () => {
                       />
                       <div>
                         <p className="text-sm font-semibold text-white">{provider.name}</p>
-                        <p className="text-xs text-orange-400 capitalize">{provider.type} Plan Available</p>
+                        <p className="text-xs text-accent capitalize">{provider.type} Plan Available</p>
                       </div>
                     </div>
 
-                    <span className="px-3 py-1 rounded-xl bg-orange-500/20 text-orange-400 text-xs font-semibold border border-orange-500/30">
+                    <span className="px-3 py-1 rounded-xl bg-accent/20 text-accent text-xs font-semibold border border-accent/30">
                       Watch Now
                     </span>
                   </div>
@@ -1225,7 +1201,7 @@ export const DetailsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
           <div id="section-journal" className="scroll-mt-28 rounded-2xl border border-white/10 bg-[#141622]/60 p-6 backdrop-blur-xl space-y-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-orange-400" />
+              <MessageSquare className="w-5 h-5 text-accent" />
               <span>Personal Cinema Log & Rating</span>
             </h3>
 
@@ -1263,7 +1239,7 @@ export const DetailsPage: React.FC = () => {
                   updatePersonalNote(item.id, e.target.value);
                 }}
                 placeholder="Write your editorial thoughts, memorable quotes, favorite scenes, or technical critiques..."
-                className="w-full rounded-2xl border border-white/10 bg-black/40 p-4 text-xs sm:text-sm text-white placeholder-white/40 focus:border-orange-500 focus:outline-none"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 p-4 text-xs sm:text-sm text-white placeholder-white/40 focus:border-accent focus:outline-none"
               />
             </div>
           </div>

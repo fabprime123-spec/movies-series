@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { motion } from 'motion/react';
 import { 
   Image as ImageIcon, 
   Maximize2, 
@@ -169,46 +168,46 @@ export const MediaImageGallery: React.FC<MediaImageGalleryProps> = ({ media }) =
 
         <div className="text-xs text-white/50 hidden sm:flex items-center gap-3">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-orange-400" />
+            <span className="w-2 h-2 rounded-full bg-accent" />
             {backdrops.length} Backdrops
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="w-2 h-2 rounded-full bg-accent" />
             {posters.length} Posters
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-accent" />
             {others.length} Logos & KeyArt
           </span>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* 1. BACKDROPS: 2 ROWS ONLY LIKE A SLIDER                                  */}
+      {/* 1. BACKDROPS: 1 ROW SLIDER                                                */}
       {/* ========================================================================= */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-4 sm:px-8 lg:px-12">
           <div className="flex items-center gap-2">
             <h4 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              <Film className="w-4 h-4 text-orange-400" />
+              <Film className="w-4 h-4 text-accent" />
               <span>Backdrops & Production Stills</span>
             </h4>
-            <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 text-[10px] font-bold">
-              2 Rows Slider
+            <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30 text-[10px] font-bold">
+              1 Row Slider
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => scrollContainer(backdropScrollRef, 'left')}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm cursor-pointer"
               title="Scroll Backdrops Left"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scrollContainer(backdropScrollRef, 'right')}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm cursor-pointer"
               title="Scroll Backdrops Right"
             >
               <ChevronRight className="w-4 h-4" />
@@ -216,16 +215,16 @@ export const MediaImageGallery: React.FC<MediaImageGalleryProps> = ({ media }) =
           </div>
         </div>
 
-        {/* 2-Row Horizontal Slider for Backdrops */}
+        {/* 1-Row Horizontal Slider for Backdrops */}
         <div
           ref={backdropScrollRef}
-          className="grid grid-rows-2 grid-flow-col gap-3 sm:gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12"
+          className="flex flex-nowrap gap-3 sm:gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12"
         >
           {backdrops.map((img, idx) => (
             <div
               key={`backdrop-${idx}-${img.url}`}
               onClick={() => openImageModal(img)}
-              className="group relative w-[240px] sm:w-[310px] md:w-[340px] aspect-[16/9] shrink-0 snap-start rounded-2xl overflow-hidden cursor-pointer border border-white/10 bg-slate-900 shadow-md hover:shadow-2xl hover:border-orange-500/50 transition-all duration-300 select-none"
+              className="group relative w-[240px] sm:w-[310px] md:w-[340px] aspect-[16/9] shrink-0 snap-start rounded-2xl overflow-hidden cursor-pointer border border-white/10 bg-slate-900 shadow-md hover:shadow-2xl hover:border-accent/50 transition-all duration-300 select-none"
             >
               <img
                 src={img.url}
@@ -259,31 +258,31 @@ export const MediaImageGallery: React.FC<MediaImageGalleryProps> = ({ media }) =
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. POSTERS: 2 ROWS ONLY LIKE A SLIDER                                    */}
+      {/* 2. POSTERS: 1 ROW SLIDER                                                  */}
       {/* ========================================================================= */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-4 sm:px-8 lg:px-12">
           <div className="flex items-center gap-2">
             <h4 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-amber-400" />
+              <Layers className="w-4 h-4 text-accent" />
               <span>Official Posters & Theatrical Art</span>
             </h4>
-            <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
-              2 Rows Slider
+            <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30 text-[10px] font-bold">
+              1 Row Slider
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => scrollContainer(posterScrollRef, 'left')}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm cursor-pointer"
               title="Scroll Posters Left"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scrollContainer(posterScrollRef, 'right')}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm cursor-pointer"
               title="Scroll Posters Right"
             >
               <ChevronRight className="w-4 h-4" />
@@ -291,16 +290,16 @@ export const MediaImageGallery: React.FC<MediaImageGalleryProps> = ({ media }) =
           </div>
         </div>
 
-        {/* 2-Row Horizontal Slider for Posters */}
+        {/* 1-Row Horizontal Slider for Posters */}
         <div
           ref={posterScrollRef}
-          className="grid grid-rows-2 grid-flow-col gap-3 sm:gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12"
+          className="flex flex-nowrap gap-3 sm:gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12"
         >
           {posters.map((img, idx) => (
             <div
               key={`poster-${idx}-${img.url}`}
               onClick={() => openImageModal(img)}
-              className="group relative w-[120px] sm:w-[150px] md:w-[165px] aspect-[2/3] shrink-0 snap-start rounded-2xl overflow-hidden cursor-pointer border border-white/10 bg-slate-900 shadow-md hover:shadow-2xl hover:border-amber-500/50 transition-all duration-300 select-none"
+              className="group relative w-[120px] sm:w-[150px] md:w-[165px] aspect-[2/3] shrink-0 snap-start rounded-2xl overflow-hidden cursor-pointer border border-white/10 bg-slate-900 shadow-md hover:shadow-2xl hover:border-accent/50 transition-all duration-300 select-none"
             >
               <img
                 src={img.url}
@@ -369,7 +368,7 @@ export const MediaImageGallery: React.FC<MediaImageGalleryProps> = ({ media }) =
         {/* 1-Row Horizontal Slider for Others & Logos */}
         <div
           ref={othersScrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12"
+          className="flex flex-nowrap gap-4 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12"
         >
           {others.map((img, idx) => (
             <div

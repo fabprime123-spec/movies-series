@@ -90,7 +90,7 @@ export const ParentalGuideAdvisory: React.FC<ParentalGuideProps> = ({ ageRating,
     <div className="rounded-2xl border border-white/10 bg-[#141622]/60 p-5 sm:p-6 backdrop-blur-xl space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
+          <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
             <ShieldAlert className="w-5 h-5" />
           </div>
           <div>
@@ -98,7 +98,7 @@ export const ParentalGuideAdvisory: React.FC<ParentalGuideProps> = ({ ageRating,
               <h3 className="text-base sm:text-lg font-bold text-white">
                 Parents Guide & Content Advisory
               </h3>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30">
                 IMDb Standards
               </span>
             </div>

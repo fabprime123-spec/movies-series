@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, Filter, X, Sparkles, Star, Film, Tv, Users, SlidersHorizontal, ArrowUpDown, Volume2, Globe, Check, RotateCcw, Loader2 } from 'lucide-react';
 import { MediaCard } from '../components/MediaCard';
@@ -6,7 +6,7 @@ import { MediaGridSkeleton, ActorCardSkeleton } from '../components/Skeletons';
 import { MediaItem, ActorItem } from '../types';
 import { GENRES_LIST, GLOBAL_LANGUAGES, STREAMING_SERVICES } from '../data/constants';
 import { searchTmdbFull, fetchDiscoverMedia } from '../services/tmdb';
-import { motion, AnimatePresence } from 'motion/react';
+import { useTheme } from '../context/ThemeContext';
 
 const TRENDING_TAGS = [
   'Dune',
@@ -24,6 +24,7 @@ const TRENDING_TAGS = [
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { accentConfig } = useTheme();
 
   const initialQuery = searchParams.get('q') || '';
   const initialType = searchParams.get('type') || 'all';
@@ -53,6 +54,14 @@ export const SearchPage: React.FC = () => {
     if (typeFilter !== 'all') params.type = typeFilter;
     setSearchParams(params, { replace: true });
   }, [query, typeFilter, setSearchParams]);
+
+  // Sync state when URL params change externally (e.g. from nav or link)
+  useEffect(() => {
+    const urlQ = searchParams.get('q');
+    if (urlQ !== null && urlQ !== query) {
+      setQuery(urlQ);
+    }
+  }, [searchParams]);
 
   // Execute initial TMDB Search or Discovery on filter / query change
   useEffect(() => {
@@ -167,14 +176,18 @@ export const SearchPage: React.FC = () => {
   // Client-side filtering & sorting
   const filteredMedia = useMemo(() => {
     return mediaResults.filter((item) => {
+      if (!item) return false;
+
       // Type filter
       if (typeFilter !== 'all' && typeFilter !== 'actors' && item.type !== typeFilter) {
         return false;
       }
 
       // Genre
-      if (selectedGenre !== 'All Genres' && !item.genres.includes(selectedGenre)) {
-        return false;
+      if (selectedGenre !== 'All Genres') {
+        if (!item.genres || !Array.isArray(item.genres) || !item.genres.includes(selectedGenre)) {
+          return false;
+        }
       }
 
       // Min Rating
@@ -192,22 +205,23 @@ export const SearchPage: React.FC = () => {
 
       // Audio Language
       if (selectedLanguage !== 'all') {
-        const hasLang = item.dubbedLanguages.some((l) => l.code === selectedLanguage || l.code.startsWith(selectedLanguage));
-        if (!hasLang) return false;
+        const matchesOriginal = item.originalLanguage === selectedLanguage;
+        const matchesDubbed = item.dubbedLanguages && Array.isArray(item.dubbedLanguages) && item.dubbedLanguages.some((l) => l.code === selectedLanguage || l.code?.startsWith(selectedLanguage));
+        if (!matchesOriginal && !matchesDubbed) return false;
       }
 
       // Streaming provider
       if (selectedProvider !== 'all') {
-        const hasProvider = item.streamingProviders.some((p) => p.name.toLowerCase().includes(selectedProvider.toLowerCase()));
+        const hasProvider = item.streamingProviders && Array.isArray(item.streamingProviders) && item.streamingProviders.some((p) => p.name?.toLowerCase().includes(selectedProvider.toLowerCase()));
         if (!hasProvider) return false;
       }
 
       return true;
     }).sort((a, b) => {
       if (sortBy === 'rating') return (b.ratings?.imdb ?? 0) - (a.ratings?.imdb ?? 0);
-      if (sortBy === 'newest') return b.releaseYear - a.releaseYear;
-      if (sortBy === 'title') return a.title.localeCompare(b.title);
-      return (b.ratings.communityVotesCount || 0) - (a.ratings.communityVotesCount || 0);
+      if (sortBy === 'newest') return (b.releaseYear || 0) - (a.releaseYear || 0);
+      if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
+      return (b.ratings?.communityVotesCount || 0) - (a.ratings?.communityVotesCount || 0);
     });
   }, [mediaResults, typeFilter, selectedGenre, minRating, selectedYear, selectedLanguage, selectedProvider, sortBy]);
 
@@ -228,7 +242,7 @@ export const SearchPage: React.FC = () => {
     <div className="w-full min-h-screen px-4 sm:px-8 lg:px-12 py-8 pb-24 space-y-8">
       {/* Search Header Banner */}
       <div className="max-w-4xl mx-auto text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-semibold">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-semibold">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Universal Cinema & Talent Archive</span>
         </div>
@@ -241,8 +255,8 @@ export const SearchPage: React.FC = () => {
 
         {/* Large Prominent Search Input */}
         <div className="relative mt-6 max-w-2xl mx-auto">
-          <div className="relative flex items-center">
-            <Search className="absolute left-4.5 w-5 h-5 text-orange-400 pointer-events-none" />
+          <form onSubmit={(e) => e.preventDefault()} className="relative flex items-center">
+            <Search className="absolute left-4.5 w-5 h-5 text-accent pointer-events-none" />
             <input
               id="main-media-search-input"
               type="text"
@@ -250,10 +264,11 @@ export const SearchPage: React.FC = () => {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by title, anime, franchise, actor, or director..."
               autoFocus
-              className="w-full pl-12 pr-12 py-4 rounded-2xl bg-[#141622]/90 border-2 border-white/15 text-white placeholder-white/40 shadow-2xl focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-500/20 text-base transition-all"
+              className="w-full pl-12 pr-12 py-4 rounded-2xl bg-[#141622]/90 border-2 border-white/15 text-white placeholder-white/40 shadow-2xl focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/20 text-base transition-all"
             />
             {query && (
               <button
+                type="button"
                 onClick={() => setQuery('')}
                 className="absolute right-4 p-1.5 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                 title="Clear search"
@@ -261,7 +276,7 @@ export const SearchPage: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             )}
-          </div>
+          </form>
         </div>
 
         {/* Trending Quick Search Pills */}
@@ -271,7 +286,7 @@ export const SearchPage: React.FC = () => {
             <button
               key={tag}
               onClick={() => setQuery(tag)}
-              className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/30 border border-white/10 text-xs text-white/70 transition-all"
+              className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-accent/20 hover:text-accent hover:border-accent/30 border border-white/10 text-xs text-white/70 transition-all cursor-pointer"
             >
               {tag}
             </button>
@@ -295,9 +310,9 @@ export const SearchPage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setTypeFilter(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25'
+                    ? `bg-gradient-to-r ${accentConfig.gradient} text-white shadow-lg shadow-accent/25`
                     : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
                 }`}
               >
@@ -311,21 +326,21 @@ export const SearchPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               showAdvancedFilters || hasActiveFilters
-                ? 'bg-orange-500/20 border-orange-500 text-orange-400'
+                ? 'bg-accent/20 border-accent text-accent'
                 : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Filters</span>
-            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-orange-400"></span>}
+            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-accent"></span>}
           </button>
 
           {hasActiveFilters && (
             <button
               onClick={resetAllFilters}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
               title="Reset all filters"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -336,14 +351,10 @@ export const SearchPage: React.FC = () => {
       </div>
 
       {/* Advanced Filters Expandable Drawer Panel */}
-      <AnimatePresence>
-        {showAdvancedFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="rounded-2xl border border-white/10 bg-[#141622]/95 p-5 backdrop-blur-xl shadow-2xl space-y-5"
-          >
+      {showAdvancedFilters && (
+        <div
+          className="rounded-2xl border border-white/10 bg-[#141622]/95 p-5 backdrop-blur-xl shadow-2xl space-y-5 transition-all duration-300 transform opacity-100"
+        >
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               
               {/* 1. Sort By */}
@@ -352,7 +363,7 @@ export const SearchPage: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-orange-500 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-accent focus:outline-none"
                 >
                   <option value="popularity">Most Popular / Relevance</option>
                   <option value="rating">Highest IMDb Score (10-1)</option>
@@ -367,7 +378,7 @@ export const SearchPage: React.FC = () => {
                 <select
                   value={minRating}
                   onChange={(e) => setMinRating(Number(e.target.value))}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-orange-500 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-accent focus:outline-none"
                 >
                   <option value={0}>Any Rating</option>
                   <option value={8.5}>8.5+ Masterpieces Only</option>
@@ -383,7 +394,7 @@ export const SearchPage: React.FC = () => {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-orange-500 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-accent focus:outline-none"
                 >
                   <option value="all">All Release Years</option>
                   <option value="2024">2024 (Latest)</option>
@@ -400,7 +411,7 @@ export const SearchPage: React.FC = () => {
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-orange-500 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white focus:border-accent focus:outline-none"
                 >
                   <option value="all">Any Spoken Audio</option>
                   <option value="en">English Track</option>
@@ -422,9 +433,9 @@ export const SearchPage: React.FC = () => {
                   <button
                     key={g}
                     onClick={() => setSelectedGenre(g)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       selectedGenre === g
-                        ? 'bg-orange-500 text-white font-bold'
+                        ? 'bg-accent text-white font-bold'
                         : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                     }`}
                   >
@@ -433,9 +444,8 @@ export const SearchPage: React.FC = () => {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Results Header with Count */}
       <div className="flex items-center justify-between text-xs text-white/50">
@@ -447,7 +457,7 @@ export const SearchPage: React.FC = () => {
           results {query ? `for "${query}"` : ''}
         </span>
         {hasMore && (
-          <span className="text-[11px] text-orange-400 font-medium hidden sm:inline">
+          <span className="text-[11px] text-accent font-medium hidden sm:inline">
             Scroll down to load more titles
           </span>
         )}
@@ -458,12 +468,12 @@ export const SearchPage: React.FC = () => {
         <div className="space-y-3 p-4 rounded-2xl bg-[#141622]/60 border border-white/10 backdrop-blur-xl">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Users className="w-4 h-4 text-orange-400" />
+              <Users className="w-4 h-4 text-accent" />
               <span>Matching Talent & Cast ({actorResults.length})</span>
             </h3>
             <button
               onClick={() => setTypeFilter('actors')}
-              className="text-xs text-orange-400 hover:text-orange-300 font-medium transition-colors"
+              className="text-xs text-accent hover:text-accent-hover font-medium transition-colors cursor-pointer"
             >
               View all talent →
             </button>
@@ -474,7 +484,7 @@ export const SearchPage: React.FC = () => {
               <button
                 key={actor.id}
                 onClick={() => navigate(`/actors/${actor.id}`)}
-                className="group relative flex flex-col text-left overflow-hidden rounded-xl border border-white/10 bg-black/40 p-2.5 hover:border-orange-500/50 hover:bg-[#181a2b] transition-all cursor-pointer"
+                className="group relative flex flex-col text-left overflow-hidden rounded-xl border border-white/10 bg-black/40 p-2.5 hover:border-accent/50 hover:bg-[#181a2b] transition-all cursor-pointer"
               >
                 <div className="aspect-square w-full rounded-lg overflow-hidden bg-black/50 mb-2">
                   <img
@@ -483,7 +493,7 @@ export const SearchPage: React.FC = () => {
                     className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h4 className="font-semibold text-xs text-white group-hover:text-orange-400 transition-colors line-clamp-1">
+                <h4 className="font-semibold text-xs text-white group-hover:text-accent transition-colors line-clamp-1">
                   {actor.name}
                 </h4>
                 <p className="text-[10px] text-white/40 line-clamp-1">{actor.knownForDepartment}</p>
@@ -512,7 +522,7 @@ export const SearchPage: React.FC = () => {
               <button
                 key={actor.id}
                 onClick={() => navigate(`/actors/${actor.id}`)}
-                className="group relative flex flex-col text-left overflow-hidden rounded-2xl border border-white/10 bg-[#14161f]/70 backdrop-blur-xl p-3 shadow-lg hover:border-orange-500/50 hover:bg-[#181a2b] cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                className="group relative flex flex-col text-left overflow-hidden rounded-2xl border border-white/10 bg-[#14161f]/70 backdrop-blur-xl p-3 shadow-lg hover:border-accent/50 hover:bg-[#181a2b] cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-accent/50"
                 title={`View ${actor.name}'s profile & filmography`}
               >
                 <div className="aspect-square w-full rounded-xl overflow-hidden bg-black/40 mb-3">
@@ -522,7 +532,7 @@ export const SearchPage: React.FC = () => {
                     className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h3 className="font-semibold text-sm text-white group-hover:text-orange-400 transition-colors line-clamp-1">
+                <h3 className="font-semibold text-sm text-white group-hover:text-accent transition-colors line-clamp-1">
                   {actor.name}
                 </h3>
                 <p className="text-xs text-white/50">{actor.knownForDepartment}</p>
@@ -554,14 +564,14 @@ export const SearchPage: React.FC = () => {
           {/* Infinite Scroll Bottom Sentinel / Loader / Manual Button */}
           <div ref={observerRef} className="py-8 flex flex-col items-center justify-center space-y-3">
             {loadingMore ? (
-              <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs text-orange-400">
+              <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs text-accent">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Loading more titles from TMDB catalogue...</span>
               </div>
             ) : hasMore ? (
               <button
                 onClick={loadNextPage}
-                className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-semibold transition-all hover:border-orange-500/40"
+                className="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 text-xs font-semibold transition-all hover:border-accent/40 cursor-pointer"
               >
                 Load Next Page ({page + 1})
               </button>
@@ -575,14 +585,14 @@ export const SearchPage: React.FC = () => {
       ) : (
         /* Empty State */
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 rounded-3xl border border-white/5 bg-white/[0.02]">
-          <Film className="w-14 h-14 text-orange-500/40" />
+          <Film className="w-14 h-14 text-accent/40" />
           <h3 className="text-xl font-bold text-white font-['Outfit',sans-serif]">No titles match your query</h3>
           <p className="text-xs text-white/50 max-w-md">
             We couldn't find any media matching "{query}" with the current filters. Try resetting the filters or searching for another title.
           </p>
           <button
             onClick={resetAllFilters}
-            className="px-4 py-2 rounded-xl bg-orange-500 text-xs font-semibold text-white hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+            className={`px-4 py-2 rounded-xl bg-gradient-to-r ${accentConfig.gradient} text-xs font-semibold text-white shadow-lg shadow-accent/20 hover:opacity-90 transition-all cursor-pointer`}
           >
             Clear All Search Filters
           </button>

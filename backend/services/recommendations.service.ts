@@ -18,22 +18,43 @@ export class RecommendationsService {
     type: string,
     id: string
   ): Promise<CuratedRecommendationsPayload> {
-    const mediaType = type === 'tv' || type === 'anime' ? 'tv' : 'movie';
-    const cacheKey = `curated_recs_${mediaType}_${id}`;
+    const isTv = type === 'tv';
+    const isAnime = type === 'anime';
+    const primaryType = isTv || isAnime ? 'tv' : 'movie';
+    const fallbackType = primaryType === 'tv' ? 'movie' : 'tv';
+
+    const cacheKey = `curated_recs_${type}_${id}`;
 
     const cached = backendCache.get<CuratedRecommendationsPayload>(cacheKey);
     if (cached) {
       return cached;
     }
 
-    // 1. Fetch media details with append_to_response
-    const details = await TmdbService.fetchFromTmdb<any>(`/${mediaType}/${id}`, {
-      append_to_response: 'credits,recommendations,similar',
-    });
+    // 1. Fetch media details with append_to_response and graceful fallback
+    let details: any;
+    try {
+      details = await TmdbService.fetchFromTmdb<any>(
+        `/${primaryType}/${id}`,
+        { append_to_response: 'credits,recommendations,similar' },
+        5 * 60 * 1000,
+        { silent404: true }
+      );
+    } catch (err: any) {
+      if (err?.status === 404 || err?.message?.includes('404')) {
+        details = await TmdbService.fetchFromTmdb<any>(
+          `/${fallbackType}/${id}`,
+          { append_to_response: 'credits,recommendations,similar' },
+          5 * 60 * 1000
+        );
+      } else {
+        throw err;
+      }
+    }
 
     const title = details.title || details.name || 'This Title';
     const primaryGenre = details.genres?.[0]?.name || 'Cinema';
     const primaryGenreId = details.genres?.[0]?.id ? String(details.genres[0].id) : '';
+    const resolvedMediaType = details.first_air_date || details.number_of_seasons ? 'tv' : 'movie';
 
     // Extract director or creator
     const director = details.credits?.crew?.find(
@@ -66,8 +87,10 @@ export class RecommendationsService {
 
     if (moreLikeThisItems.length > 0) {
       rows.push({
+        id: 'similar',
         category: 'similar',
         title: 'More Like This',
+        badge: 'Curated Match',
         badgeText: 'Curated Match',
         subtitle: `Curated thematic companions matching the tone and world of ${title}`,
         accentColor: 'orange',
@@ -93,8 +116,10 @@ export class RecommendationsService {
 
         if (directedWorks.length > 0) {
           rows.push({
+            id: 'director-spotlight',
             category: 'director',
             title: `Directed by ${directorName}`,
+            badge: 'Filmmaker Canon',
             badgeText: 'Filmmaker Canon',
             subtitle: `Notable cinema craft and vision from director ${directorName}`,
             accentColor: 'indigo',
@@ -119,8 +144,10 @@ export class RecommendationsService {
 
         if (starredWorks.length > 0) {
           rows.push({
+            id: 'actor-spotlight',
             category: 'actor',
             title: `Starring ${leadActorName}`,
+            badge: 'Cast Spotlight',
             badgeText: 'Cast Spotlight',
             subtitle: `Celebrated performances and filmography starring ${leadActorName}`,
             accentColor: 'amber',
@@ -135,7 +162,7 @@ export class RecommendationsService {
     // Row 4: Top Benchmark Classics in Primary Genre
     if (primaryGenreId) {
       try {
-        const genreBenchmarks = await TmdbService.fetchFromTmdb<any>(`/discover/${mediaType}`, {
+        const genreBenchmarks = await TmdbService.fetchFromTmdb<any>(`/discover/${resolvedMediaType}`, {
           with_genres: primaryGenreId,
           sort_by: 'vote_average.desc',
           'vote_count.gte': '800',
@@ -147,8 +174,10 @@ export class RecommendationsService {
 
         if (benchmarkItems.length > 0) {
           rows.push({
+            id: 'genre-masterpieces',
             category: 'benchmark',
             title: `Essential ${primaryGenre} Masterpieces`,
+            badge: 'Genre Benchmark',
             badgeText: 'Genre Benchmark',
             subtitle: `Highest rated cinematic landmarks defining the ${primaryGenre} landscape`,
             accentColor: 'emerald',

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ChevronLeft, ChevronRight, Star, Clapperboard, Award, Film } from 'lucide-react';
 import { MediaSliderSkeleton } from './Skeletons';
+import { useTheme } from '../context/ThemeContext';
 
 interface CuratedItem {
   id: number | string;
@@ -17,15 +18,18 @@ interface CuratedItem {
 }
 
 interface CuratedRow {
-  id: string;
+  id?: string;
+  category?: string;
   title: string;
   subtitle: string;
-  badge: string;
+  badge?: string;
+  badgeText?: string;
   items: CuratedItem[];
 }
 
 interface RecommendationsPayload {
-  baseTitle: string;
+  baseTitle?: string;
+  title?: string;
   primaryGenre: string;
   directorName?: string;
   leadActorName?: string;
@@ -79,21 +83,33 @@ export const CuratedRecommendationRows: React.FC<CuratedRecommendationRowsProps>
 
   return (
     <div id="section-recommendations" className="scroll-mt-28 space-y-12">
-      {data.rows.map((row) => (
-        <RecommendationRow key={row.id} row={row} defaultType={type} navigate={navigate} />
-      ))}
+      {data.rows.map((row, rowIndex) => {
+        const rowKey = row.id || row.category || `curated-row-${rowIndex}`;
+        return (
+          <RecommendationRow
+            key={rowKey}
+            row={row}
+            rowIndex={rowIndex}
+            defaultType={type}
+            navigate={navigate}
+          />
+        );
+      })}
     </div>
   );
 };
 
 interface RowProps {
   row: CuratedRow;
+  rowIndex: number;
   defaultType: string;
   navigate: (path: string) => void;
 }
 
-const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) => {
+const RecommendationRow: React.FC<RowProps> = ({ row, rowIndex, defaultType, navigate }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rowId = row.id || row.category || `curated-row-${rowIndex}`;
+  const badgeLabel = row.badge || row.badgeText || 'Curated Match';
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -102,7 +118,17 @@ const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) =
     }
   };
 
-  if (!row.items || row.items.length === 0) {
+  const uniqueItems = React.useMemo(() => {
+    const seen = new Set<string | number>();
+    return (row.items || []).filter((item) => {
+      if (!item || item.id === undefined || item.id === null) return false;
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [row.items]);
+
+  if (uniqueItems.length === 0) {
     return null;
   }
 
@@ -111,10 +137,10 @@ const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) =
       {/* Row Header with standard screen gutters */}
       <div className="flex items-center justify-between px-4 sm:px-8 lg:px-12">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-400">
-            {row.id === 'director-spotlight' ? (
+          <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
+            {rowId === 'director-spotlight' || row.category === 'director' ? (
               <Clapperboard className="w-5 h-5" />
-            ) : row.id === 'genre-masterpieces' ? (
+            ) : rowId === 'genre-masterpieces' || row.category === 'benchmark' ? (
               <Award className="w-5 h-5" />
             ) : (
               <Sparkles className="w-5 h-5" />
@@ -125,8 +151,8 @@ const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) =
               <h3 className="text-lg sm:text-xl font-bold font-['Outfit',sans-serif] text-white">
                 {row.title}
               </h3>
-              <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 hidden sm:inline">
-                {row.badge}
+              <span className="text-[10px] font-bold text-accent uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 hidden sm:inline">
+                {badgeLabel}
               </span>
             </div>
             <p className="text-xs text-white/50">{row.subtitle}</p>
@@ -159,7 +185,7 @@ const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) =
         ref={scrollRef}
         className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12 carousel-contain"
       >
-        {row.items.map((item) => {
+        {uniqueItems.map((item, itemIndex) => {
           const itemTitle = item.title || item.name || 'Untitled';
           const itemYear = (item.release_date || item.first_air_date || '').split('-')[0];
           const rating = item.vote_average ? item.vote_average.toFixed(1) : null;
@@ -167,10 +193,11 @@ const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) =
             ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
             : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
           const itemType = item.media_type || defaultType || 'movie';
+          const itemKey = `${rowId}-${item.id}-${itemIndex}`;
 
           return (
             <div
-              key={`${row.id}-${item.id}`}
+              key={itemKey}
               onClick={() => {
                 navigate(`/details/${itemType}/${item.id}`);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -178,7 +205,7 @@ const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) =
               className="group relative shrink-0 w-[145px] sm:w-[175px] md:w-[195px] snap-start cursor-pointer transition-transform duration-200 hover:-translate-y-1.5 card-gpu"
             >
               {/* Poster Container */}
-              <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#12141d] border border-white/10 group-hover:border-orange-500/50 shadow-lg shadow-black/40 transition-colors">
+              <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-[#12141d] border border-white/10 group-hover:border-accent/50 shadow-lg shadow-black/40 transition-colors">
                 <img
                   src={posterUrl}
                   alt={itemTitle}
@@ -204,13 +231,13 @@ const RecommendationRow: React.FC<RowProps> = ({ row, defaultType, navigate }) =
 
                 {/* Hover Gradient Vignette */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                  <span className="text-xs font-bold text-orange-400">Explore Title →</span>
+                  <span className="text-xs font-bold text-accent">Explore Title →</span>
                 </div>
               </div>
 
               {/* Title & Info below card */}
               <div className="mt-2.5 space-y-0.5 px-0.5">
-                <h4 className="text-xs sm:text-sm font-semibold text-white truncate group-hover:text-orange-400 transition-colors">
+                <h4 className="text-xs sm:text-sm font-semibold text-white truncate group-hover:text-accent transition-colors">
                   {itemTitle}
                 </h4>
                 <p className="text-[11px] text-white/50 flex items-center gap-1.5">

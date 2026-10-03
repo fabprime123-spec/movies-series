@@ -9,7 +9,6 @@ import {
 import { MediaItem } from '../types';
 import { useWatchlist } from '../context/WatchlistContext';
 import { useTrailer } from '../context/TrailerContext';
-import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { MediaContextMenu } from './MediaContextMenu';
 
@@ -67,16 +66,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item: itemProp, media, onO
       onOpenDetails={onOpenDetails}
       onPlayTrailer={onPlayTrailer}
     >
-      <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+      <div
         onClick={handleCardClick}
-        className="group relative flex flex-col cursor-pointer select-none"
+        className="group relative flex flex-col cursor-pointer select-none transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98]"
       >
         {/* Poster Container with Microsoft Store fluent lighting and shadow */}
         <div className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl bg-slate-900 border border-white/10 shadow-md group-hover:shadow-[0_16px_36px_rgba(0,0,0,0.45)] group-hover:border-white/30 group-hover:ring-1 group-hover:ring-white/20 transition-all duration-300">
@@ -158,7 +150,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item: itemProp, media, onO
             {item.releaseYear} • {item.type === 'tv' ? 'Series' : primaryGenre}
           </p>
         </div>
-      </motion.div>
+      </div>
     </MediaContextMenu>
   );
 };

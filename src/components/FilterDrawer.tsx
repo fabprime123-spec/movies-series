@@ -2,7 +2,6 @@ import React from 'react';
 import { X, RotateCcw, Check, Sparkles, Volume2, Subtitles, Film, Tv, Star, Calendar, Radio } from 'lucide-react';
 import { FilterOptions } from '../types';
 import { GENRES_LIST, GLOBAL_LANGUAGES, STREAMING_SERVICES } from '../data/constants';
-import { motion, AnimatePresence } from 'motion/react';
 
 interface FilterDrawerProps {
   isOpen: boolean;
@@ -19,27 +18,20 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
   setFilters,
   onResetFilters,
 }) => {
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop blur overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-          />
+  if (!isOpen) return null;
 
-          {/* Drawer panel */}
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="relative z-10 flex h-full w-full max-w-md flex-col bg-[#0c0e18]/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl overflow-hidden text-white"
-          >
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      {/* Backdrop blur overlay */}
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+      />
+
+      {/* Drawer panel */}
+      <div
+        className="relative z-10 flex h-full w-full max-w-md flex-col bg-[#0c0e18]/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl overflow-hidden text-white transition-transform duration-300 transform translate-x-0"
+      >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 p-5 bg-black/20">
               <div className="flex items-center gap-2">
@@ -256,9 +248,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
                 Apply Filters
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
-      )}
-    </AnimatePresence>
   );
 };

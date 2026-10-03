@@ -5,8 +5,10 @@
  */
 
 export interface RecommendationRow {
+  id?: string;
   category: 'similar' | 'director' | 'actor' | 'benchmark';
   title: string;
+  badge?: string;
   badgeText: string;
   subtitle: string;
   accentColor: string;
