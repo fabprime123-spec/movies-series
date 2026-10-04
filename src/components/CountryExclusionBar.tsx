@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Globe, X, Plus, Filter, Check, ShieldAlert } from 'lucide-react';
+import { Globe, Plus, X } from 'lucide-react';
 import { useCountryFilter, POPULAR_COUNTRIES, CountryOption } from '../context/CountryFilterContext';
+import { PillBadge } from './common';
 
 interface CountryExclusionBarProps {
   className?: string;
@@ -58,23 +59,15 @@ export const CountryExclusionBar: React.FC<CountryExclusionBarProps> = ({
       </div>
 
       {/* Excluded Country Badges with Flags and Remove Button */}
-      {excludedObjects.map((country) => (
-        <span
-          key={country.code}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-400 font-semibold shadow-sm transition-all"
-        >
-          <span className="text-sm">{country.flag}</span>
-          <span>{country.name}</span>
-          <button
-            type="button"
-            onClick={() => includeCountry(country.code)}
-            className="p-0.5 rounded-full hover:bg-rose-500/30 text-rose-300 hover:text-white transition-colors"
-            title={`Restore ${country.name} content`}
-            aria-label={`Remove ${country.name} exclusion`}
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </span>
+      {excludedObjects.map((country, index) => (
+        <PillBadge
+          key={`excluded-country-${country.code}-${index}`}
+          variant="rose"
+          size="sm"
+          icon={<span className="text-sm mr-1">{country.flag}</span>}
+          label={country.name}
+          onRemove={() => includeCountry(country.code)}
+        />
       ))}
 
       {/* Add / Exclude More Countries Button & Dropdown */}
@@ -102,11 +95,11 @@ export const CountryExclusionBar: React.FC<CountryExclusionBarProps> = ({
             </div>
 
             <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-              {filteredOptions.map((c) => {
+              {filteredOptions.map((c, index) => {
                 const isItemExcluded = excludedCountries.includes(c.code);
                 return (
                   <button
-                    key={c.code}
+                    key={`option-country-${c.code}-${index}`}
                     type="button"
                     onClick={() => toggleCountryExclusion(c.code)}
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-all ${

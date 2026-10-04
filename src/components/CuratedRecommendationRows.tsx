@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ChevronLeft, ChevronRight, Star, Clapperboard, Award, Film } from 'lucide-react';
+import { Sparkles, Clapperboard, Award } from 'lucide-react';
 import { MediaSliderSkeleton } from './Skeletons';
-import { useTheme } from '../context/ThemeContext';
+import { HorizontalSlider, RatingBadge } from './common';
 
 interface CuratedItem {
   id: number | string;
@@ -53,8 +53,11 @@ export const CuratedRecommendationRows: React.FC<CuratedRecommendationRowsProps>
         setLoading(true);
         const res = await fetch(`/api/recommendations/${type}/${id}`);
         if (res.ok) {
-          const json = await res.json();
-          if (isMounted) setData(json);
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const json = await res.json();
+            if (isMounted) setData(json);
+          }
         }
       } catch (err) {
         console.error('Failed to load curated recommendations:', err);
@@ -84,7 +87,7 @@ export const CuratedRecommendationRows: React.FC<CuratedRecommendationRowsProps>
   return (
     <div id="section-recommendations" className="scroll-mt-28 space-y-12">
       {data.rows.map((row, rowIndex) => {
-        const rowKey = row.id || row.category || `curated-row-${rowIndex}`;
+        const rowKey = `curated-row-${row.id || row.category || 'cat'}-${rowIndex}`;
         return (
           <RecommendationRow
             key={rowKey}
@@ -107,16 +110,8 @@ interface RowProps {
 }
 
 const RecommendationRow: React.FC<RowProps> = ({ row, rowIndex, defaultType, navigate }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const rowId = row.id || row.category || `curated-row-${rowIndex}`;
+  const rowId = `rec-row-${row.id || row.category || 'cat'}-${rowIndex}`;
   const badgeLabel = row.badge || row.badgeText || 'Curated Match';
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = direction === 'left' ? -500 : 500;
-      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
 
   const uniqueItems = React.useMemo(() => {
     const seen = new Set<string | number>();
@@ -132,68 +127,50 @@ const RecommendationRow: React.FC<RowProps> = ({ row, rowIndex, defaultType, nav
     return null;
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Row Header with standard screen gutters */}
-      <div className="flex items-center justify-between px-4 sm:px-8 lg:px-12">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
-            {rowId === 'director-spotlight' || row.category === 'director' ? (
-              <Clapperboard className="w-5 h-5" />
-            ) : rowId === 'genre-masterpieces' || row.category === 'benchmark' ? (
-              <Award className="w-5 h-5" />
-            ) : (
-              <Sparkles className="w-5 h-5" />
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg sm:text-xl font-bold font-['Outfit',sans-serif] text-white">
-                {row.title}
-              </h3>
-              <span className="text-[10px] font-bold text-accent uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 hidden sm:inline">
-                {badgeLabel}
-              </span>
-            </div>
-            <p className="text-xs text-white/50">{row.subtitle}</p>
-          </div>
-        </div>
-
-        {/* Carousel Navigation Buttons */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => scroll('left')}
-            className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-white transition-all active:scale-95"
-            aria-label="Scroll Left"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scroll('right')}
-            className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-white transition-all active:scale-95"
-            aria-label="Scroll Right"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+  const header = (
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded-xl bg-accent/20 border border-accent/30 text-accent">
+        {row.id === 'director-spotlight' || row.category === 'director' ? (
+          <Clapperboard className="w-5 h-5" />
+        ) : row.id === 'genre-masterpieces' || row.category === 'benchmark' ? (
+          <Award className="w-5 h-5" />
+        ) : (
+          <Sparkles className="w-5 h-5" />
+        )}
       </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-bold font-['Outfit',sans-serif] text-white">
+            {row.title}
+          </h3>
+          <span className="text-[10px] font-bold text-accent uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 hidden sm:inline">
+            {badgeLabel}
+          </span>
+        </div>
+        <p className="text-xs text-white/50">{row.subtitle}</p>
+      </div>
+    </div>
+  );
 
-      {/* Edge-to-Edge 1-Row Slider Track */}
-      <div
-        ref={scrollRef}
-        className="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 px-4 sm:px-8 lg:px-12 carousel-contain"
+  return (
+    <div className="space-y-3">
+      <HorizontalSlider
+        id={rowId}
+        header={header}
+        buttonsPosition="header"
+        gutter="standard"
+        gap="md"
+        scrollAmount={550}
       >
         {uniqueItems.map((item, itemIndex) => {
           const itemTitle = item.title || item.name || 'Untitled';
           const itemYear = (item.release_date || item.first_air_date || '').split('-')[0];
-          const rating = item.vote_average ? item.vote_average.toFixed(1) : null;
+          const rating = item.vote_average ? Number(item.vote_average.toFixed(1)) : null;
           const posterUrl = item.poster_path
             ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
             : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
           const itemType = item.media_type || defaultType || 'movie';
-          const itemKey = `${rowId}-${item.id}-${itemIndex}`;
+          const itemKey = `${rowId}-${item.id || 'item'}-${itemIndex}`;
 
           return (
             <div
@@ -215,10 +192,9 @@ const RecommendationRow: React.FC<RowProps> = ({ row, rowIndex, defaultType, nav
                 />
 
                 {/* Rating Badge */}
-                {rating && (
-                  <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/75 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[11px] font-bold text-amber-400">
-                    <Star className="w-3 h-3 fill-amber-400" />
-                    <span>{rating}</span>
+                {rating !== null && rating > 0 && (
+                  <div className="absolute top-2.5 right-2.5">
+                    <RatingBadge rating={rating} size="sm" variant="glass" />
                   </div>
                 )}
 
@@ -249,7 +225,7 @@ const RecommendationRow: React.FC<RowProps> = ({ row, rowIndex, defaultType, nav
             </div>
           );
         })}
-      </div>
+      </HorizontalSlider>
     </div>
   );
 };

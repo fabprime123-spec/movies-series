@@ -11,6 +11,7 @@ import { useWatchlist } from '../context/WatchlistContext';
 import { useTrailer } from '../context/TrailerContext';
 import { useNavigate } from 'react-router-dom';
 import { MediaContextMenu } from './MediaContextMenu';
+import { RatingBadge } from './common';
 
 interface MediaCardProps {
   item?: MediaItem;
@@ -85,10 +86,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ item: itemProp, media, onO
 
           {/* Top Badges: Rating on left, discreet Bookmark & Options on right */}
           <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10">
-            <span className="flex items-center gap-1 rounded-lg bg-black/75 px-2 py-0.5 text-[11px] font-bold text-amber-400 backdrop-blur-md border border-white/10 shadow-sm">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              {rating}
-            </span>
+            <RatingBadge rating={item.ratings?.imdb ?? 0} size="sm" variant="glass" />
 
             <div className="flex items-center gap-1">
               <button

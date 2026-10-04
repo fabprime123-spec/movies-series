@@ -6,14 +6,21 @@
 
 export type NavTab = 'home' | 'movies' | 'series' | 'shows' | 'actors' | 'upcoming' | 'watchlist' | 'history' | 'library';
 
+export type SortField = 'popularity' | 'rating' | 'release_date' | 'newest' | 'title';
+export type SortOrder = 'desc' | 'asc';
+
 export interface FilterOptions {
   searchQuery: string;
   type: 'all' | 'movie' | 'tv' | 'anime';
   genre: string;
   minRating: number;
   yearRange: [number, number];
+  year?: string;
+  director?: string;
+  cast?: string;
   dubbedLanguage: string;
   subtitledLanguage: string;
   streamingService: string;
-  sortBy: 'popularity' | 'rating' | 'newest' | 'title';
+  sortBy: SortField;
+  sortOrder?: SortOrder;
 }

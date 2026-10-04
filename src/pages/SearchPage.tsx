@@ -7,6 +7,7 @@ import { MediaItem, ActorItem } from '../types';
 import { GENRES_LIST, GLOBAL_LANGUAGES, STREAMING_SERVICES } from '../data/constants';
 import { searchTmdbFull, fetchDiscoverMedia } from '../services/tmdb';
 import { useTheme } from '../context/ThemeContext';
+import { EmptyState, AppButton } from '../components/common';
 
 const TRENDING_TAGS = [
   'Dune',
@@ -584,19 +585,14 @@ export const SearchPage: React.FC = () => {
         </div>
       ) : (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 rounded-3xl border border-white/5 bg-white/[0.02]">
-          <Film className="w-14 h-14 text-accent/40" />
-          <h3 className="text-xl font-bold text-white font-['Outfit',sans-serif]">No titles match your query</h3>
-          <p className="text-xs text-white/50 max-w-md">
-            We couldn't find any media matching "{query}" with the current filters. Try resetting the filters or searching for another title.
-          </p>
-          <button
-            onClick={resetAllFilters}
-            className={`px-4 py-2 rounded-xl bg-gradient-to-r ${accentConfig.gradient} text-xs font-semibold text-white shadow-lg shadow-accent/20 hover:opacity-90 transition-all cursor-pointer`}
-          >
-            Clear All Search Filters
-          </button>
-        </div>
+        <EmptyState
+          icon={<Film className="w-10 h-10 text-accent/60" />}
+          title="No titles match your query"
+          description={`We couldn't find any media matching "${query}" with the current filters. Try resetting the filters or searching for another title.`}
+          actionLabel="Clear All Search Filters"
+          onAction={resetAllFilters}
+          className="my-12"
+        />
       )}
     </div>
   );

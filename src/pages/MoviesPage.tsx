@@ -2,18 +2,34 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MediaCard } from '../components/MediaCard';
 import { MediaGridSkeleton } from '../components/Skeletons';
 import { MediaItem } from '../types';
-import { GENRES_LIST } from '../data/constants';
 import { fetchDiscoverMediaWithPagination } from '../services/tmdb';
-import { Film, Filter, ChevronRight, Loader2, RotateCcw, Layers } from 'lucide-react';
+import { Film, ChevronRight, Loader2, RotateCcw, Layers } from 'lucide-react';
 import { useCountryFilter } from '../context/CountryFilterContext';
 import { CountryExclusionBar } from '../components/CountryExclusionBar';
-
-const ALL_GENRES_OPTIONS = ['All Genres', ...GENRES_LIST];
+import { 
+  AdvancedFilterBar, 
+  AdvancedFilterState 
+} from '../components/AdvancedFilterBar';
+import { 
+  AppButton, 
+  EmptyState, 
+  SectionHeader 
+} from '../components/common';
 
 export const MoviesPage: React.FC = () => {
   const [movies, setMovies] = useState<MediaItem[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<string>('All Genres');
-  const [sortBy, setSortBy] = useState<string>('popularity.desc');
+  const [filters, setFilters] = useState<AdvancedFilterState>({
+    type: 'movie',
+    genre: 'All Genres',
+    sortBy: 'popularity.desc',
+    year: 'all',
+    minRating: 0,
+    director: '',
+    cast: '',
+    dubbedLanguage: 'all',
+    subtitledLanguage: 'all',
+  });
+
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
@@ -21,20 +37,27 @@ export const MoviesPage: React.FC = () => {
   const contentTopRef = useRef<HTMLDivElement>(null);
   const { filterMediaList } = useCountryFilter();
 
-  // Reset to page 1 whenever genre or sort criteria change
-  const handleGenreChange = (genre: string) => {
-    if (genre !== selectedGenre) {
-      setSelectedGenre(genre);
-      setPage(1);
-    }
-  };
-
-  const handleSortChange = (newSort: string) => {
-    setSortBy(newSort);
+  const handleFilterChange = (updated: Partial<AdvancedFilterState>) => {
+    setFilters((prev) => ({ ...prev, ...updated }));
     setPage(1);
   };
 
-  // Initial load for page 1 on genre or sort change
+  const handleResetFilters = () => {
+    setFilters({
+      type: 'movie',
+      genre: 'All Genres',
+      sortBy: 'popularity.desc',
+      year: 'all',
+      minRating: 0,
+      director: '',
+      cast: '',
+      dubbedLanguage: 'all',
+      subtitledLanguage: 'all',
+    });
+    setPage(1);
+  };
+
+  // Initial load for page 1 on filter criteria change
   useEffect(() => {
     let isMounted = true;
     async function loadInitialMovies() {
@@ -42,12 +65,18 @@ export const MoviesPage: React.FC = () => {
       try {
         const result = await fetchDiscoverMediaWithPagination(
           'movie',
-          selectedGenre === 'All Genres' ? '' : selectedGenre,
-          sortBy,
-          undefined,
-          undefined,
-          undefined,
-          1
+          filters.genre === 'All Genres' ? '' : filters.genre,
+          filters.sortBy,
+          filters.dubbedLanguage === 'all' ? undefined : filters.dubbedLanguage,
+          filters.minRating,
+          filters.year === 'all' ? undefined : filters.year,
+          1,
+          {
+            director: filters.director.trim() || undefined,
+            cast: filters.cast.trim() || undefined,
+            subtitledLang:
+              filters.subtitledLanguage === 'all' ? undefined : filters.subtitledLanguage,
+          }
         );
         if (isMounted) {
           setMovies(result.items || []);
@@ -64,7 +93,16 @@ export const MoviesPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedGenre, sortBy]);
+  }, [
+    filters.genre,
+    filters.sortBy,
+    filters.year,
+    filters.minRating,
+    filters.director,
+    filters.cast,
+    filters.dubbedLanguage,
+    filters.subtitledLanguage,
+  ]);
 
   // Consecutive page load handler: appends page 2, 3, etc. without removing previous movies
   const handleLoadNextConsecutivePage = async () => {
@@ -74,12 +112,18 @@ export const MoviesPage: React.FC = () => {
     try {
       const result = await fetchDiscoverMediaWithPagination(
         'movie',
-        selectedGenre === 'All Genres' ? '' : selectedGenre,
-        sortBy,
-        undefined,
-        undefined,
-        undefined,
-        nextPage
+        filters.genre === 'All Genres' ? '' : filters.genre,
+        filters.sortBy,
+        filters.dubbedLanguage === 'all' ? undefined : filters.dubbedLanguage,
+        filters.minRating,
+        filters.year === 'all' ? undefined : filters.year,
+        nextPage,
+        {
+          director: filters.director.trim() || undefined,
+          cast: filters.cast.trim() || undefined,
+          subtitledLang:
+            filters.subtitledLanguage === 'all' ? undefined : filters.subtitledLanguage,
+        }
       );
       setMovies((prev) => {
         const existingIds = new Set(prev.map((m) => m.id));
@@ -101,12 +145,18 @@ export const MoviesPage: React.FC = () => {
     try {
       const result = await fetchDiscoverMediaWithPagination(
         'movie',
-        selectedGenre === 'All Genres' ? '' : selectedGenre,
-        sortBy,
-        undefined,
-        undefined,
-        undefined,
-        1
+        filters.genre === 'All Genres' ? '' : filters.genre,
+        filters.sortBy,
+        filters.dubbedLanguage === 'all' ? undefined : filters.dubbedLanguage,
+        filters.minRating,
+        filters.year === 'all' ? undefined : filters.year,
+        1,
+        {
+          director: filters.director.trim() || undefined,
+          cast: filters.cast.trim() || undefined,
+          subtitledLang:
+            filters.subtitledLanguage === 'all' ? undefined : filters.subtitledLanguage,
+        }
       );
       setMovies(result.items || []);
       setPage(1);
@@ -122,95 +172,65 @@ export const MoviesPage: React.FC = () => {
   const filteredMovies = filterMediaList(movies);
 
   return (
-    <div ref={contentTopRef} className="w-full px-4 sm:px-8 lg:px-12 py-8 pb-24 space-y-8">
-      {/* Editorial Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-widest mb-1.5">
-            <Film className="w-4 h-4" />
-            <span>The Cinema Edition</span>
-          </div>
-          <p className="text-sm text-muted mt-1 max-w-2xl">
-            Explore global cinema classics, modern blockbusters, and award-winning festival premieres across every genre.
-          </p>
-        </div>
-
-        {/* Sort selector */}
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-muted flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5" /> Sort:
-          </label>
-          <select
-            value={sortBy}
-            onChange={(e) => handleSortChange(e.target.value)}
-            className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-foreground focus:border-ring focus:outline-none"
-          >
-            <option value="popularity.desc">Most Popular</option>
-            <option value="vote_average.desc">Highest Rated</option>
-            <option value="primary_release_date.desc">Newest Releases</option>
-            <option value="revenue.desc">Box Office Gross</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Country Exclusion & Genre Filters */}
-      <div className="space-y-4">
-        <CountryExclusionBar />
-
-        {/* Genre Pills */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted">
-            <span className="font-semibold uppercase tracking-wider text-[11px]">Filter by Genre</span>
-            <span className="flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-amber-500" />
-              <span>
-                Pages 1 to {page} loaded ({filteredMovies.length} movies)
-              </span>
+    <div ref={contentTopRef} className="w-full px-4 sm:px-8 lg:px-12 py-8 pb-24 space-y-6">
+      {/* Editorial Header using common SectionHeader */}
+      <SectionHeader
+        title="The Cinema Catalog"
+        subtitle="Explore global cinematic classics, modern blockbusters, award-winning auteur works, and festival premieres with advanced filtering."
+        badge="Cinema Edition"
+        icon={<Film className="w-5 h-5 text-amber-400" />}
+        iconBg="bg-amber-500/10"
+        iconColor="text-amber-400"
+        className="px-0 sm:px-0 lg:px-0 mb-2"
+        action={
+          <div className="flex items-center gap-2 text-xs text-muted">
+            <Layers className="w-3.5 h-3.5 text-amber-500" />
+            <span>
+              {filteredMovies.length} titles loaded (Page {page} of {totalPages})
             </span>
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {ALL_GENRES_OPTIONS.map((genre) => {
-              const isSelected = selectedGenre === genre;
-              return (
-                <button
-                  key={genre}
-                  onClick={() => handleGenreChange(genre)}
-                  className={`whitespace-nowrap px-4 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
-                    isSelected
-                      ? 'bg-amber-500 text-black font-bold shadow-md shadow-amber-500/20'
-                      : 'bg-surface text-muted hover:bg-surface/80 hover:text-foreground border border-border'
-                  }`}
-                >
-                  {genre}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+        }
+      />
+
+      {/* Country Exclusion Filter */}
+      <CountryExclusionBar />
+
+      {/* Advanced Filtering & Sorting Bar */}
+      <AdvancedFilterBar
+        filters={filters}
+        onChange={handleFilterChange}
+        onReset={handleResetFilters}
+        showTypeFilter={false}
+        totalResultsCount={filteredMovies.length}
+      />
 
       {/* Media Grid / Page Loading Skeleton */}
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-4 pt-2">
           <div className="flex items-center gap-2 text-xs text-amber-400 font-medium animate-pulse">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Loading {selectedGenre} films (Page 1)...</span>
+            <span>Filtering cinema catalogue (Page 1)...</span>
           </div>
           <MediaGridSkeleton count={18} />
         </div>
       ) : filteredMovies.length === 0 ? (
-        <div className="p-12 text-center text-muted bg-card border border-border rounded-2xl">
-          No films found matching current filters. Try adjusting your genre or country exclusions.
-        </div>
+        <EmptyState
+          icon={<Film className="w-8 h-8 text-amber-400/60" />}
+          title="No Films Found"
+          description="No cinematic titles matched your current combination of genre, director, cast, release year, or language filters. Try loosening your criteria."
+          actionLabel="Reset All Filters"
+          onAction={handleResetFilters}
+          className="my-12"
+        />
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-8 pt-2">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {filteredMovies.map((item) => (
               <MediaCard key={`${item.id}-${item.releaseYear}`} item={item} />
             ))}
           </div>
 
-          {/* Consecutive Consecutive Page Appending Controls */}
+          {/* Consecutive Page Appending Controls */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border">
             {/* Status indicators */}
             <div className="flex items-center gap-2 text-xs text-muted">
@@ -224,37 +244,31 @@ export const MoviesPage: React.FC = () => {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               {/* Reset to Page 1 if multiple pages loaded */}
               {page > 1 && (
-                <button
-                  type="button"
+                <AppButton
+                  variant="secondary"
+                  size="sm"
                   onClick={handleResetToFirstPage}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface hover:bg-surface/80 border border-border text-foreground text-xs font-semibold transition-all active:scale-95"
+                  icon={<RotateCcw className="w-3.5 h-3.5 text-muted" />}
                   title="Reset to Page 1 only"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-muted" />
-                  <span>Reset to Page 1</span>
-                </button>
+                  Reset to Page 1
+                </AppButton>
               )}
 
               {/* Consecutive Load More Button */}
               {page < totalPages ? (
-                <button
-                  type="button"
+                <AppButton
+                  variant="primary"
+                  size="md"
                   onClick={handleLoadNextConsecutivePage}
                   disabled={loadingMore}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all shadow-md shadow-amber-500/20 active:scale-95 disabled:opacity-50"
+                  loading={loadingMore}
+                  icon={<ChevronRight className="w-4 h-4" />}
+                  iconPosition="right"
+                  className="w-full sm:w-auto"
                 >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-black" />
-                      <span>Loading Consecutive Page {page + 1}...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Load Next Page {page + 1} (Consecutive)</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                  Load Next Page {page + 1} (Consecutive)
+                </AppButton>
               ) : (
                 <span className="text-xs text-muted italic">All available pages loaded</span>
               )}

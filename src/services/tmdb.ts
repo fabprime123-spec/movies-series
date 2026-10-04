@@ -558,32 +558,91 @@ export async function fetchTrendingTitles(mediaType: 'all' | 'movie' | 'tv' = 'a
   return [];
 }
 
+export interface AdvancedDiscoverFilter {
+  type?: 'all' | 'movie' | 'tv' | 'anime';
+  genre?: string;
+  sortBy?: string;
+  dubbedLang?: string;
+  subtitledLang?: string;
+  minRating?: number;
+  year?: number | string;
+  director?: string;
+  cast?: string;
+  page?: number;
+}
+
 export async function fetchDiscoverMediaWithPagination(
   type: 'all' | 'movie' | 'tv' | 'anime' = 'all',
   genre?: string,
   sortBy: string = 'popularity.desc',
   dubbedLang?: string,
   minRating?: number,
-  year?: number,
-  page: number = 1
+  year?: number | string,
+  page: number = 1,
+  advancedOptions?: {
+    director?: string;
+    cast?: string;
+    subtitledLang?: string;
+  }
 ): Promise<{ items: MediaItem[]; page: number; totalPages: number }> {
   try {
     const params = new URLSearchParams();
     if (type !== 'all') params.set('type', type);
     if (genre && genre !== 'All Genres') params.set('genre', genre);
     if (sortBy) params.set('sortBy', sortBy);
-    if (dubbedLang) params.set('dubbedLanguage', dubbedLang);
-    if (minRating) params.set('minRating', String(minRating));
-    if (year) params.set('year', String(year));
+    if (dubbedLang && dubbedLang !== 'all') params.set('dubbedLanguage', dubbedLang);
+    if (minRating && minRating > 0) params.set('minRating', String(minRating));
+    if (year && year !== 'all') params.set('year', String(year));
     if (page > 1) params.set('page', String(page));
+    if (advancedOptions?.director) params.set('director', advancedOptions.director);
+    if (advancedOptions?.cast) params.set('cast', advancedOptions.cast);
 
     const res = await fetch(`/api/tmdb/discover?${params.toString()}`);
     if (!res.ok) throw new Error('Discover API error');
     const data = await res.json();
     if (data.results && Array.isArray(data.results)) {
-      const items = data.results.map((item: any) =>
+      let items = data.results.map((item: any) =>
         transformTmdbToMediaItem(item, type === 'all' ? undefined : type)
       );
+
+      // Client-side refinement for director, cast, and languages if specified
+      if (advancedOptions?.director) {
+        const dirLower = advancedOptions.director.toLowerCase();
+        if (items.some((item: MediaItem) => item.directors && item.directors.length > 0)) {
+          items = items.filter((item: MediaItem) =>
+            !item.directors ||
+            item.directors.length === 0 ||
+            item.directors.some((d) => d.name.toLowerCase().includes(dirLower))
+          );
+        }
+      }
+      if (advancedOptions?.cast) {
+        const castLower = advancedOptions.cast.toLowerCase();
+        if (items.some((item: MediaItem) => item.cast && item.cast.length > 0)) {
+          items = items.filter((item: MediaItem) =>
+            !item.cast ||
+            item.cast.length === 0 ||
+            item.cast.some((c) => c.name.toLowerCase().includes(castLower))
+          );
+        }
+      }
+      if (advancedOptions?.subtitledLang && advancedOptions.subtitledLang !== 'all') {
+        const subCode = advancedOptions.subtitledLang.toLowerCase();
+        items = items.filter((item: MediaItem) =>
+          !item.subtitledLanguages ||
+          item.subtitledLanguages.length === 0 ||
+          item.subtitledLanguages.some((s) => s.code.toLowerCase() === subCode)
+        );
+      }
+      if (dubbedLang && dubbedLang !== 'all') {
+        const dubCode = dubbedLang.toLowerCase();
+        items = items.filter((item: MediaItem) =>
+          !item.dubbedLanguages ||
+          item.dubbedLanguages.length === 0 ||
+          item.dubbedLanguages.some((l) => l.code.toLowerCase() === dubCode)
+        );
+      }
+
       return {
         items,
         page: data.page || page,
@@ -603,8 +662,13 @@ export async function fetchDiscoverMedia(
   sortBy: string = 'popularity.desc',
   dubbedLang?: string,
   minRating?: number,
-  year?: number,
-  page: number = 1
+  year?: number | string,
+  page: number = 1,
+  advancedOptions?: {
+    director?: string;
+    cast?: string;
+    subtitledLang?: string;
+  }
 ): Promise<MediaItem[]> {
   const result = await fetchDiscoverMediaWithPagination(
     type,
@@ -613,7 +677,8 @@ export async function fetchDiscoverMedia(
     dubbedLang,
     minRating,
     year,
-    page
+    page,
+    advancedOptions
   );
   return result.items;
 }

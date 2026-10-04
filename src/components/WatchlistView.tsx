@@ -20,6 +20,7 @@ import {
 import { MediaItem, WatchlistItem, WatchlistStatus } from '../types';
 import { useWatchlist } from '../context/WatchlistContext';
 import { useAuth } from '../context/AuthContext';
+import { EmptyState } from './common';
 
 interface WatchlistViewProps {
   onOpenDetails: (item: MediaItem) => void;
@@ -319,25 +320,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         </div>
       ) : (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-white/10 bg-white/5 backdrop-blur-md space-y-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400">
-            <Bookmark className="h-8 w-8" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="font-['Outfit',sans-serif] text-lg font-bold text-white">
-              Your Watchlist is Empty
-            </h3>
-            <p className="text-xs text-white/50 max-w-sm">
-              Discover top movies, series, and anime with global language tracks, and save them to your personal watchlist.
-            </p>
-          </div>
-          <button
-            onClick={onExplore}
-            className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-500/25 hover:from-indigo-600 hover:to-purple-700 transition-all"
-          >
-            Explore Titles Now
-          </button>
-        </div>
+        <EmptyState
+          icon={<Bookmark className="h-8 w-8 text-indigo-400" />}
+          title="Your Watchlist is Empty"
+          description="Discover top movies, series, and anime with global language tracks, and save them to your personal watchlist."
+          actionLabel="Explore Titles Now"
+          onAction={onExplore}
+          className="my-12"
+        />
       )}
     </div>
   );
